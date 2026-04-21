@@ -15,11 +15,31 @@ export type Config = { userSeed?: number; onUpdate?: OnUpdate };
 export type CanvasOrNull = HTMLCanvasElement | null;
 export type Ctx = CanvasRenderingContext2D;
 export type Control = { magnitude: number; angle: number };
-export type Player = { id: string; location: Cord };
+export type Player = {
+  id: string;
+  name?: string;
+  location: Cord;
+  goldCount?: number;
+  finishTime?: number;
+  joinedAt?: number;
+  startTime?: number;
+};
 export type RRef<T> = MutableRefObject<T>;
 export type KHandler<T> = KeyboardEventHandler<T>;
 export type Context = { ctx: Ctx; width: number; height: number };
 export type CallBack = (success?: boolean, message?: string) => void;
 export interface StringMap {
   [key: string]: number;
+}
+export interface Question {
+  id: number;
+  text: string;
+  options: string[];
+  answer: string;
+}
+export interface Gold {
+  id: string;
+  location: Cord;
+  collectedBy: string | null;
+  question: Question;
 }

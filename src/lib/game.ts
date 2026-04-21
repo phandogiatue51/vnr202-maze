@@ -1,9 +1,15 @@
 import CanvasManager from './canvas-manager';
 import { generateMazeSync } from './maze-generator';
-import { Cell, Cord, Direction, CanvasOrNull, Control, Player } from '../type';
+import { Cell, Cord, Direction, CanvasOrNull, Control, Player, Gold } from '../type';
+import { generateGold, checkGoldCollision } from './gold-logic';
 import { hasDirection } from './direction-util';
 import { generatePlayer, randomColorFromString } from './misc-util';
-import { MAX_SPEED, PLAYER_RADIUS_TO_CELL_RATIO as MARGIN, START_POS } from '../constants';
+import {
+  MAX_SPEED,
+  PLAYER_RADIUS_TO_CELL_RATIO as MARGIN,
+  START_POS,
+  MAZE_SEED
+} from '../constants';
 
 export default class Game {
   private canvasManager: CanvasManager;
@@ -20,13 +26,27 @@ export default class Game {
 
   private seed?: number;
 
-  constructor(canvas: CanvasOrNull, level: number, seed?: number, pid?: string) {
-    this.seed = seed;
+  private goldItems: Gold[];
+
+  private playersMap?: Map<string, Player>;
+
+  private onGoldHit?: (gold: Gold) => void;
+
+  constructor(
+    canvas: CanvasOrNull,
+    level: number,
+    seed?: number,
+    pid?: string,
+    onGoldHit?: (gold: Gold) => void
+  ) {
+    this.seed = seed || MAZE_SEED;
     this.level = level;
-    this.gridSize = this.level + 5;
+    this.gridSize = level; // Use the provided level as size
     this.player = generatePlayer(START_POS, pid);
     this.maze = generateMazeSync(this.gridSize, this.seed);
     this.canvasManager = new CanvasManager(canvas);
+    this.goldItems = generateGold(this.gridSize, this.seed);
+    this.onGoldHit = onGoldHit;
   }
 
   public getMaze = (): Cell[][] => {
@@ -37,8 +57,24 @@ export default class Game {
     return this.player;
   };
 
+  public getSeed = (): number | undefined => {
+    return this.seed;
+  };
+
   public setOpponentsPos = (positions: Map<string, Cord>): void => {
     this.opPositions = positions;
+  };
+
+  public setGoldItems = (golds: Gold[]): void => {
+    this.goldItems = golds;
+  };
+
+  public setPlayersMap = (players: Map<string, Player>): void => {
+    this.playersMap = players;
+  };
+
+  public setCanvas = (canvas: CanvasOrNull): void => {
+    this.canvasManager = new CanvasManager(canvas);
   };
 
   public performMove = (control: Control): void => {
@@ -48,17 +84,25 @@ export default class Game {
     nr += -MAX_SPEED * magnitude * Math.sin(angle);
     nc += MAX_SPEED * magnitude * Math.cos(angle);
     this.player.location = this.getBoundedCord(nr, nc);
+
+    const hitGold = checkGoldCollision(this.player.location, this.goldItems, MARGIN);
+    if (hitGold && this.onGoldHit) {
+      this.onGoldHit(hitGold);
+    }
   };
 
   public renderGame = (): void => {
+    if (!this.canvasManager) return;
     this.canvasManager.refreshContext();
-    this.canvasManager.drawGrid(this.maze);
+    this.canvasManager.drawGrid(this.maze, this.player.location);
+    this.canvasManager.drawGolds(this.goldItems);
     this.canvasManager.drawStartFinish(this.maze);
-    this.opPositions?.forEach((pos, id) =>
-      this.canvasManager.drawPlayer(pos, randomColorFromString(id))
-    );
-    const { location, id } = this.player;
-    this.canvasManager.drawPlayer(location, randomColorFromString(id));
+    this.opPositions?.forEach((pos, id) => {
+      const name = this.playersMap?.get(id)?.name;
+      this.canvasManager.drawPlayer(pos, randomColorFromString(id), this.player.location, name);
+    });
+    const { location, id, name } = this.player;
+    this.canvasManager.drawPlayer(location, randomColorFromString(id), this.player.location, name);
   };
 
   public checkWin = (): boolean => {

@@ -3,7 +3,7 @@ import React, { FC, KeyboardEventHandler } from 'react';
 export interface ContainerProps {
   onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
   onKeyUp?: KeyboardEventHandler<HTMLDivElement>;
-  children: JSX.Element | Array<JSX.Element>;
+  children: React.ReactNode;
 }
 
 const Container: FC<ContainerProps> = (props: ContainerProps) => {

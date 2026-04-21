@@ -1,0 +1,120 @@
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+  color: white;
+  text-align: center;
+  padding: 2rem;
+}
+
+.title-section {
+  margin-bottom: 4rem;
+  animation: fadeInDown 1s ease-out;
+}
+
+.game-title {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 0.2rem;
+  color: #fbbf24;
+  text-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+  margin-bottom: 1rem;
+}
+
+.game-subtitle {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5rem;
+}
+
+.home-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.menu-btn {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-play {
+  background: #fbbf24;
+  color: #0f172a;
+}
+
+.btn-play:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(251, 191, 36, 0.3);
+  background: #fcd34d;
+}
+
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  /* backdrop-filter: blur(8px); */
+
+.btn-rule:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.rules-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  text-align: left;
+  padding-right: 1rem;
+}
+
+.rules-content h3 {
+  color: #fbbf24;
+  margin-top: 1.5rem;
+}
+
+/* Modal Styling Overrides */
+.modal-content {
+  background: #1e293b !important;
+  color: white !important;
+  border: 4px solid #fbbf24 !important; /* Thicker border for clarity */
+  border-radius: 20px !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9) !important;
+  z-index: 2000 !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.modal-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.name-input-field {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  padding: 12px !important;
+  font-size: 1.1rem !important;
+  border-radius: 10px !important;
+}
+
+.name-input-field:focus {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2) !important;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-50px); }
+  to { opacity: 1; transform: translateY(0); }
+}

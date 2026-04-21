@@ -1,18 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from 'react-bootstrap';
 import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
-import JoyStick from '../components/joy-stick';
 import Nav from '../components/nav';
-import { IDLE_CONTROL, INSTRUCTION, TOAST_CONFIG } from '../constants';
-import getCanvasSize, { getOnKey, getOffKey, getOnStick, getOffStick } from '../lib/misc-util';
+import QuestionModal from '../components/question-modal';
+import Leaderboard from '../components/leaderboard';
+import { IDLE_CONTROL, TOAST_CONFIG } from '../constants';
+import getCanvasSize, { getOnKey, getOffKey } from '../lib/misc-util';
 import MultiplayerGame from '../lib/multiplayer-game';
-import { CallBack, Control } from '../type';
+import { CallBack, Control, Gold, Player } from '../type';
 
 const onGameOver: CallBack = (win) => {
-  if (win) toast.success('Congrats, You won the game 🚀', TOAST_CONFIG);
-  else toast.error('Too Slow,  Faster Next Time 😭', TOAST_CONFIG);
+  if (win) {
+    toast.success('Congrats, You won the game 🚀', TOAST_CONFIG);
+  } else {
+    // Only show "Too Slow" if the user was actually playing
+    // and not just joining a finished game
+    const playerName = localStorage.getItem('playerName');
+    if (playerName) {
+      toast.error('Match Ended! Check the leaderboard.', TOAST_CONFIG);
+    }
+  }
 };
 
 const callBack: CallBack = (success, msg) => {
@@ -37,23 +47,69 @@ function MultiplayerMaze(): JSX.Element {
   const animationRef = useRef(0);
   const control = useRef<Control>(IDLE_CONTROL);
   const keyDirs = useRef(0);
+  const [hitGold, setHitGold] = useState<Gold | null>(null);
+  const [timeLeft, setTimeLeft] = useState(300);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [isGameOver, setIsGameOver] = useState(false);
 
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
-  const onStick = getOnStick(control);
-  const offStick = getOffStick(control);
+
+  const hitGoldRef = useRef<Gold | null>(null);
+  const [isFinished, setIsFinished] = useState(false);
 
   const animate: FrameRequestCallback = useCallback(() => {
-    gameRef.current?.performMove(control.current);
+    // Freeze movement if question modal is open
+    if (!hitGoldRef.current) {
+      gameRef.current?.performMove(control.current);
+    }
     gameRef.current?.render();
     animationRef.current = requestAnimationFrame(animate);
   }, []);
 
   useEffect(() => {
-    gameRef.current = new MultiplayerGame(canvasRef.current, onGameOver, callBack);
-    createOnLeave(() => gameRef.current?.cleanUp());
+    const game = new MultiplayerGame(
+      canvasRef.current,
+      (win) => {
+        if (win) {
+          setIsFinished(true);
+        } else {
+          const playerName = localStorage.getItem('playerName');
+          if (playerName) {
+            toast.error('Match Ended! Check the leaderboard.', TOAST_CONFIG);
+          }
+          setIsGameOver(true);
+        }
+      },
+      callBack,
+      (gold) => {
+        hitGoldRef.current = gold;
+        setHitGold(gold);
+      },
+      (seconds) => {
+        setTimeLeft(seconds);
+        if (seconds <= 0) setIsGameOver(true);
+      }
+    );
+    gameRef.current = game;
+    const playerName = localStorage.getItem('playerName');
+    if (playerName) {
+      game.enterGame(playerName);
+    }
+
+    const interval = setInterval(() => {
+      if (gameRef.current) {
+        setAllPlayers(gameRef.current.getPlayers());
+      }
+    }, 1000);
+
+    createOnLeave(() => {
+      clearInterval(interval);
+      game.cleanUp();
+    });
     return () => {
-      gameRef.current?.cleanUp();
+      clearInterval(interval);
+      game.cleanUp();
     };
   }, []);
 
@@ -66,18 +122,73 @@ function MultiplayerMaze(): JSX.Element {
     return () => cancelAnimationFrame(animationRef.current);
   }, [animate]);
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <>
-      <Container onKeyDown={onKey} onKeyUp={offKey}>
-        <Nav />
-        <h1 className="text-4xl my-4">Maze Multiplayer</h1>
-        <p>
-          No one is here? Invite your friend or open another client in incognito or another browser.
-        </p>
-        <p>{INSTRUCTION}</p>
-        <Canvas ref={canvasRef} size={canvasSize} />
-        <JoyStick size={100} offStick={offStick} onStick={onStick} />
-      </Container>
+      <Nav />
+      {/* Global Timer Overlay */}
+      <div className="timer-overlay">
+        <span className="timer-label">Time Left:</span>
+        <span className="timer-value">{formatTime(timeLeft)}</span>
+      </div>
+
+      <div className="game-layout">
+        <div className="maze-container-wrapper">
+          <Container onKeyDown={onKey} onKeyUp={offKey}>
+            <Canvas ref={canvasRef} size={canvasSize} />
+          </Container>
+        </div>
+
+        <div className="live-leaderboard-wrapper">
+          <Leaderboard
+            players={allPlayers}
+            title="Live Rankings"
+            myUID={gameRef.current?.getMyPlayerId()}
+          />
+        </div>
+      </div>
+      {hitGold && (
+        <QuestionModal
+          gold={hitGold}
+          onClose={() => {
+            hitGoldRef.current = null;
+            setHitGold(null);
+          }}
+          onAnswer={(correct) => {
+            if (correct) {
+              gameRef.current?.collectGold(hitGold);
+              toast.success('Correct! Gold collected 💰', TOAST_CONFIG);
+            } else {
+              toast.error('Wrong answer! Try again later.', TOAST_CONFIG);
+            }
+            hitGoldRef.current = null;
+            setHitGold(null);
+          }}
+        />
+      )}
+
+      {(isGameOver || isFinished) && (
+        <div className="game-over-overlay">
+          <Leaderboard
+            players={allPlayers.filter((p) => p.finishTime)}
+            title="Match Results"
+            myUID={gameRef.current?.getMyPlayerId()}
+          />
+          <div className="mt-4 d-grid gap-2">
+            <Button variant="warning" onClick={() => window.location.reload()}>
+              Chơi lại
+            </Button>
+            <Button variant="outline-light" onClick={() => { localStorage.removeItem('playerName'); window.location.href = '#/'; }}>
+              Thoát ra Menu
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

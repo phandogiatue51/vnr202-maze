@@ -3,11 +3,10 @@ import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
-import JoyStick from '../components/joy-stick';
 import Nav from '../components/nav';
 import { IDLE_CONTROL, INSTRUCTION, TOAST_CONFIG } from '../constants';
 import Game from '../lib/game';
-import getCanvasSize, { getOffStick, getOnStick, getOnKey, getOffKey } from '../lib/misc-util';
+import getCanvasSize, { getOnKey, getOffKey } from '../lib/misc-util';
 import { Control } from '../type';
 
 function OfflineMaze(): JSX.Element {
@@ -22,8 +21,6 @@ function OfflineMaze(): JSX.Element {
   const keyDirs = useRef(0);
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
-  const onStick = getOnStick(control);
-  const offStick = getOffStick(control);
 
   useEffect(() => {
     setCanvasSize(getCanvasSize(bigScreen, midScreen));
@@ -51,7 +48,6 @@ function OfflineMaze(): JSX.Element {
       <h1 className="text-4xl my-4 text-center">Offline Maze Level {level}</h1>
       <p>{INSTRUCTION}</p>
       <Canvas ref={canvasRef} size={canvasSize} />
-      <JoyStick size={100} offStick={offStick} onStick={onStick} />
     </Container>
   );
 }

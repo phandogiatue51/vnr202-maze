@@ -1,0 +1,552 @@
+[
+  {
+    "id": 1,
+    "text": "Đại hội VIII (1996) xác định mục tiêu đưa Việt Nam trở thành nước gì vào năm 2020?",
+    "options": [
+      "Nước phát triển, thu nhập cao",
+      "Nước công nghiệp",
+      "Nước nông nghiệp hiện đại",
+      "Nước xuất khẩu hàng đầu"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 2,
+    "text": "Theo Đại hội VIII, đâu là yếu tố cơ bản cho sự phát triển nhanh và bền vững?",
+    "options": [
+      "Tài nguyên thiên nhiên",
+      "Nguồn lực con người",
+      "Vốn đầu tư nước ngoài",
+      "Khoa học kỹ thuật"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 3,
+    "text": "Đại hội VIII xác định động lực then chốt của công nghiệp hóa, hiện đại hóa là gì?",
+    "options": [
+      "Đầu tư nhà nước",
+      "Xuất khẩu lao động",
+      "Khoa học – công nghệ",
+      "Phát triển nông nghiệp"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 4,
+    "text": "Đại hội IX (2001) xác định mô hình kinh tế tổng quát của Việt Nam là gì?",
+    "options": [
+      "Kinh tế thị trường định hướng xã hội chủ nghĩa",
+      "Kinh tế kế hoạch hóa tập trung",
+      "Kinh tế thị trường tư bản chủ nghĩa",
+      "Kinh tế tự cung tự cấp"
+    ],
+    "answer": "A"
+  },
+  {
+    "id": 5,
+    "text": "Giai đoạn 1996–2000, tốc độ tăng trưởng GDP bình quân của Việt Nam đạt khoảng bao nhiêu?",
+    "options": [
+      "5%/năm",
+      "6%/năm",
+      "7%/năm",
+      "8%/năm"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 6,
+    "text": "GDP năm 2000 của Việt Nam tăng gấp bao nhiêu lần so với năm 1990?",
+    "options": [
+      "Gấp 1,5 lần",
+      "Gấp 2 lần",
+      "Gấp 2,5 lần",
+      "Gấp 3 lần"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 7,
+    "text": "Việt Nam chính thức gia nhập WTO vào năm nào?",
+    "options": [
+      "2004",
+      "2005",
+      "2006",
+      "2007"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 8,
+    "text": "Năm 2008, Việt Nam thoát khỏi nhóm nước nào?",
+    "options": [
+      "Nước đang phát triển",
+      "Nước công nghiệp mới",
+      "Nước nghèo",
+      "Nước thu nhập trung bình"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 9,
+    "text": "Đến năm 2010, Việt Nam có quan hệ ngoại giao với bao nhiêu quốc gia và vùng lãnh thổ?",
+    "options": [
+      "150",
+      "180",
+      "200",
+      "230"
+    ],
+    "answer": "D"
+  },
+  {
+    "id": 10,
+    "text": "Hạn chế được nêu rõ trong giai đoạn 1996–2006 là gì?",
+    "options": [
+      "Kinh tế tư nhân phát triển quá nhanh",
+      "Kinh tế tập thể và DNNN yếu kém, hiệu quả thấp",
+      "Thiếu vốn đầu tư nước ngoài",
+      "Xuất khẩu sụt giảm nghiêm trọng"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 11,
+    "text": "Đại hội X (2006) xác định đẩy mạnh CNH, HĐH gắn với phát triển loại hình kinh tế nào?",
+    "options": [
+      "Kinh tế nông nghiệp",
+      "Kinh tế biển",
+      "Kinh tế tri thức",
+      "Kinh tế du lịch"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 12,
+    "text": "Nghị quyết 09-NQ/TW đề ra Chiến lược gì của Việt Nam đến năm 2020?",
+    "options": [
+      "Chiến lược phát triển giáo dục",
+      "Chiến lược biển Việt Nam",
+      "Chiến lược phát triển khoa học công nghệ",
+      "Chiến lược xóa đói giảm nghèo"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 13,
+    "text": "Giai đoạn 2006–2016, hạn chế nào được chỉ ra về chất lượng tăng trưởng?",
+    "options": [
+      "Tăng trưởng quá nhanh gây lạm phát",
+      "Năng suất lao động và sức cạnh tranh còn thấp",
+      "Thiếu lao động trẻ",
+      "Phụ thuộc hoàn toàn vào xuất khẩu"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 14,
+    "text": "Đại hội XIII (2021) xác định nhiệm vụ then chốt là gì?",
+    "options": [
+      "Phát triển du lịch",
+      "Xây dựng, chỉnh đốn Đảng, chống tham nhũng",
+      "Đẩy mạnh xuất khẩu nông sản",
+      "Thu hút FDI"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 15,
+    "text": "Cuộc Cách mạng công nghiệp lần thứ tư tạo ra điều gì cho Việt Nam?",
+    "options": [
+      "Chỉ có thách thức, không có cơ hội",
+      "Cả cơ hội và thách thức lớn",
+      "Chỉ có cơ hội, không có thách thức",
+      "Không ảnh hưởng gì"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 16,
+    "text": "Nguy cơ \"tự diễn biến\", \"tự chuyển hóa\" được đề cập trong giai đoạn nào?",
+    "options": [
+      "1996–2006",
+      "2006–2016",
+      "2016–nay",
+      "Cả ba giai đoạn"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 17,
+    "text": "Hạn chế nào được nêu trong giai đoạn 2016–nay?",
+    "options": [
+      "Khoảng cách giàu nghèo gia tăng",
+      "Thừa lao động chất lượng cao",
+      "Môi trường không bị ảnh hưởng",
+      "Tăng trưởng GDP âm liên tục"
+    ],
+    "answer": "A"
+  },
+  {
+    "id": 18,
+    "text": "Bài học kinh nghiệm đầu tiên được rút ra từ công cuộc đổi mới là gì?",
+    "options": [
+      "Ưu tiên phát triển công nghiệp nặng",
+      "Kiên trì độc lập dân tộc gắn liền với chủ nghĩa xã hội",
+      "Đóng cửa nền kinh tế",
+      "Hạn chế hợp tác quốc tế"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 19,
+    "text": "Đổi mới phải dựa vào ai, do ai và vì ai?",
+    "options": [
+      "Nhà nước",
+      "Đảng",
+      "Nhân dân",
+      "Doanh nghiệp"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 20,
+    "text": "Theo kết luận, chìa khóa cho những thắng lợi tiếp theo của Việt Nam là gì?",
+    "options": [
+      "Từ bỏ mục tiêu xã hội chủ nghĩa",
+      "Kiên trì mục tiêu XHCN và linh hoạt trong vận hành kinh tế",
+      "Chỉ tập trung phát triển kinh tế, bỏ qua chính trị",
+      "Phụ thuộc hoàn toàn vào viện trợ nước ngoài"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 21,
+    "text": "Đại hội VIII (1996) đề ra phương hướng cơ bản nào để thực hiện mục tiêu công nghiệp hóa, hiện đại hóa?",
+    "options": [
+      "Ưu tiên phát triển nông nghiệp",
+      "Phát triển kinh tế thị trường tư bản",
+      "Đẩy mạnh xuất khẩu lao động",
+      "Phát huy nội lực, tranh thủ ngoại lực"
+    ],
+    "answer": "D"
+  },
+  {
+    "id": 22,
+    "text": "Trong giai đoạn 1996–2000, Việt Nam đã đạt được thành tựu gì nổi bật về xóa đói giảm nghèo?",
+    "options": [
+      "Tỷ lệ hộ nghèo giảm còn dưới 10%",
+      "Tỷ lệ hộ nghèo giảm còn khoảng 15%",
+      "Không còn hộ đói",
+      "Tỷ lệ hộ nghèo tăng lên"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 23,
+    "text": "Năm 2007, sự kiện nào đánh dấu bước ngoặt hội nhập kinh tế quốc tế của Việt Nam?",
+    "options": [
+      "Ký hiệp định thương mại Việt – Mỹ",
+      "Gia nhập ASEAN",
+      "Gia nhập WTO",
+      "Đăng cai APEC"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 24,
+    "text": "Đại hội IX (2001) xác định ba chương trình kinh tế trọng điểm quốc gia, ngoại trừ:",
+    "options": [
+      "Lương thực – thực phẩm",
+      "Hàng tiêu dùng xuất khẩu",
+      "Công nghiệp nặng",
+      "Hàng xuất khẩu"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 25,
+    "text": "Tốc độ tăng trưởng xuất khẩu của Việt Nam giai đoạn 2001–2005 đạt bình quân khoảng bao nhiêu %/năm?",
+    "options": [
+      "10%",
+      "15%",
+      "20%",
+      "25%"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 26,
+    "text": "Hạn chế lớn nhất của Việt Nam trong giai đoạn 1996–2006 về thể chế là gì?",
+    "options": [
+      "Thiếu ổn định chính trị",
+      "Thể chế kinh tế thị trường định hướng XHCN chậm đổi mới",
+      "Không có quan hệ ngoại giao",
+      "Nhà nước bao cấp hoàn toàn"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 27,
+    "text": "Đại hội X (2006) xác định đột phá chiến lược nào đầu tiên?",
+    "options": [
+      "Hoàn thiện thể chế kinh tế thị trường định hướng XHCN",
+      "Phát triển khoa học công nghệ",
+      "Đào tạo nguồn nhân lực",
+      "Xây dựng kết cấu hạ tầng"
+    ],
+    "answer": "A"
+  },
+  {
+    "id": 28,
+    "text": "Giai đoạn 2006–2010, Việt Nam chịu ảnh hưởng nặng nề nhất từ cuộc khủng hoảng nào?",
+    "options": [
+      "Khủng hoảng nợ công châu Âu",
+      "Khủng hoảng tài chính toàn cầu 2008-2009",
+      "Khủng hoảng giá dầu",
+      "Khủng hoảng lương thực thế giới"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 29,
+    "text": "Năm 2010, GDP bình quân đầu người của Việt Nam đạt khoảng:",
+    "options": [
+      "1.000 USD",
+      "1.200 USD",
+      "1.500 USD",
+      "2.000 USD"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 30,
+    "text": "Đại hội XI (2011) xác định mục tiêu tổng quát đến năm 2020 là gì?",
+    "options": [
+      "Trở thành nước công nghiệp hiện đại",
+      "Trở thành nước phát triển",
+      "Trở thành nước có thu nhập trung bình cao",
+      "Trở thành nước công nghiệp theo hướng hiện đại"
+    ],
+    "answer": "D"
+  },
+  {
+    "id": 31,
+    "text": "Trong giai đoạn 2011–2015, Việt Nam tập trung tái cơ cấu lĩnh vực nào?",
+    "options": [
+      "Tái cơ cấu nông nghiệp",
+      "Tái cơ cấu công nghiệp",
+      "Tái cơ cấu đầu tư công, DNNN và hệ thống ngân hàng",
+      "Tái cơ cấu dịch vụ"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 32,
+    "text": "Năm 2016, Việt Nam bắt đầu thực hiện kế hoạch phát triển kinh tế - xã hội giai đoạn mấy năm?",
+    "options": [
+      "5 năm (2016-2020)",
+      "10 năm (2016-2025)",
+      "3 năm (2016-2018)",
+      "1 năm"
+    ],
+    "answer": "A"
+  },
+  {
+    "id": 33,
+    "text": "Nghị quyết Trung ương 4 khóa XII (2016) tập trung giải quyết vấn đề gì?",
+    "options": [
+      "Phát triển kinh tế biển",
+      "Xây dựng, chỉnh đốn Đảng, ngăn chặn suy thoái chính trị, đạo đức, lối sống",
+      "Cải cách giáo dục",
+      "Thu hút FDI"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 34,
+    "text": "Việt Nam tham gia Hiệp định Đối tác Toàn diện và Tiến bộ xuyên Thái Bình Dương (CPTPP) vào năm nào?",
+    "options": [
+      "2016",
+      "2017",
+      "2018",
+      "2019"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 35,
+    "text": "Đến năm 2019, tổng kim ngạch xuất nhập khẩu của Việt Nam đạt mức nào?",
+    "options": [
+      "Trên 300 tỷ USD",
+      "Trên 400 tỷ USD",
+      "Trên 500 tỷ USD",
+      "Trên 600 tỷ USD"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 36,
+    "text": "Đại hội XII (2016) xác định 3 đột phá chiến lược, bao gồm: hoàn thiện thể chế, phát triển hạ tầng và:",
+    "options": [
+      "Phát triển nông nghiệp",
+      "Phát triển nguồn nhân lực, nhất là nguồn nhân lực chất lượng cao",
+      "Xuất khẩu lao động",
+      "Tăng cường quốc phòng"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 37,
+    "text": "Giai đoạn 2016–2020, tốc độ tăng năng suất lao động bình quân của Việt Nam đạt khoảng:",
+    "options": [
+      "3-4%/năm",
+      "5-6%/năm",
+      "7-8%/năm",
+      "9-10%/năm"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 38,
+    "text": "Hạn chế được chỉ ra trong giai đoạn 2016–nay về môi trường là gì?",
+    "options": [
+      "Môi trường được cải thiện rõ rệt",
+      "Ô nhiễm môi trường gia tăng, nhất là ở các đô thị và khu công nghiệp",
+      "Không có vấn đề môi trường",
+      "Môi trường hoàn toàn sạch"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 39,
+    "text": "Đại hội XIII (2021) xác định mục tiêu đến năm 2030, Việt Nam là nước:",
+    "options": [
+      "Phát triển, thu nhập cao",
+      "Công nghiệp hiện đại, thu nhập trung bình cao",
+      "Nông nghiệp hiện đại",
+      "Xuất khẩu hàng đầu thế giới"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 40,
+    "text": "Tầm nhìn đến năm 2045 theo Đại hội XIII, Việt Nam trở thành:",
+    "options": [
+      "Nước công nghiệp",
+      "Nước phát triển, thu nhập cao",
+      "Nước xuất khẩu lớn",
+      "Nước nông nghiệp sạch"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 41,
+    "text": "Một trong những bài học kinh nghiệm xuyên suốt từ 1996 đến nay là:",
+    "options": [
+      "Đổi mới phải từ bỏ định hướng XHCN",
+      "Kết hợp sức mạnh dân tộc với sức mạnh thời đại",
+      "Chỉ dựa vào nguồn vốn nước ngoài",
+      "Không cần vai trò lãnh đạo của Đảng"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 42,
+    "text": "Cuộc cách mạng công nghiệp 4.0 đặt ra yêu cầu cấp bách nhất cho Việt Nam là gì?",
+    "options": [
+      "Phát triển nông nghiệp truyền thống",
+      "Đổi mới sáng tạo, chuyển đổi số, phát triển nguồn nhân lực chất lượng cao",
+      "Thu hút nhiều FDI hơn nữa",
+      "Xuất khẩu tài nguyên thô"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 43,
+    "text": "Năm 2020, Việt Nam đảm nhiệm vai trò gì trong ASEAN?",
+    "options": [
+      "Chủ tịch ASEAN",
+      "Ủy viên thường trực ASEAN",
+      "Tổng thư ký ASEAN",
+      "Không có vai trò"
+    ],
+    "answer": "A"
+  },
+  {
+    "id": 44,
+    "text": "Việt Nam hoàn thành mục tiêu kép (vừa chống dịch COVID-19 vừa phát triển kinh tế) trong giai đoạn:",
+    "options": [
+      "2018-2019",
+      "2020-2021",
+      "2022-2023",
+      "2016-2017"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 45,
+    "text": "Theo Đại hội XIII, nhiệm vụ trọng tâm xuyên suốt là gì?",
+    "options": [
+      "Phát triển kinh tế nhanh",
+      "Xây dựng Đảng và hệ thống chính trị trong sạch, vững mạnh",
+      "Đẩy mạnh đô thị hóa",
+      "Phát triển quốc phòng"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 46,
+    "text": "Nguy cơ nào được nhấn mạnh trong các văn kiện Đảng giai đoạn 2016–nay?",
+    "options": [
+      "Nguy cơ chiến tranh xâm lược",
+      "Nguy cơ \"tự diễn biến\", \"tự chuyển hóa\" nội bộ",
+      "Nguy cơ thiên tai",
+      "Nguy cơ cạn kiệt tài nguyên"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 47,
+    "text": "Việt Nam ký kết Hiệp định Thương mại tự do với Liên minh châu Âu (EVFTA) vào năm:",
+    "options": [
+      "2018",
+      "2019",
+      "2020",
+      "2021"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 48,
+    "text": "Chỉ số phát triển con người (HDI) của Việt Nam giai đoạn 2016–2020 có xu hướng:",
+    "options": [
+      "Giảm dần",
+      "Không đổi",
+      "Tăng dần, thuộc nhóm trung bình cao thế giới",
+      "Tăng chậm nhưng vẫn ở nhóm thấp"
+    ],
+    "answer": "C"
+  },
+  {
+    "id": 49,
+    "text": "Hạn chế lớn nhất về chất lượng nguồn nhân lực giai đoạn 1996–nay là:",
+    "options": [
+      "Thiếu lao động",
+      "Lao động trình độ cao còn ít, thiếu kỹ năng thực hành và ngoại ngữ",
+      "Lao động thừa quá nhiều",
+      "Lao động không muốn làm việc"
+    ],
+    "answer": "B"
+  },
+  {
+    "id": 50,
+    "text": "Kết luận chung rút ra từ quá trình đổi mới 1986–nay là:",
+    "options": [
+      "Kiên định mục tiêu độc lập dân tộc và chủ nghĩa xã hội, không ngừng đổi mới sáng tạo",
+      "Từ bỏ con đường XHCN",
+      "Chấp nhận tụt hậu để ổn định",
+      "Phụ thuộc hoàn toàn vào bên ngoài"
+    ],
+    "answer": "A"
+  }
+]

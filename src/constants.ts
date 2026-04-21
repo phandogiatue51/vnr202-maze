@@ -13,7 +13,10 @@ export const FIREBASE_CONFIG = {
   apiKey: process.env.REACT_APP_firebase_apiKey,
   authDomain: process.env.REACT_APP_firebase_authDomain,
   databaseURL: process.env.REACT_APP_firebase_databaseURL,
-  storageBucket: process.env.REACT_APP_firebase_storageBucket
+  projectId: process.env.REACT_APP_firebase_projectId,
+  storageBucket: process.env.REACT_APP_firebase_storageBucket,
+  messagingSenderId: process.env.REACT_APP_firebase_messagingSenderId,
+  appId: process.env.REACT_APP_firebase_appId
 };
 
 const position: ToastPosition = 'top-right';
@@ -53,8 +56,11 @@ export const START_POS: Cord = { r: 0.5, c: 0.5 };
 export const GRID_PADDING = 5;
 export const START_COLOR = '#DC2626';
 export const END_COLOR = '#10B981';
-export const BORDER_COLOR = '#000000';
+export const BORDER_COLOR = '#64748b';
 export const INDICATOR_COLOR = '#FF0000';
 export const DEFAULT_PLAYER_COLOR = '#FBBF24';
+export const MAZE_SIZE = 31;
+export const MAZE_SEED = 12345;
+export const VIEWPORT_SIZE = 3;
 
 export default LINKS;

@@ -8,11 +8,11 @@ export default function getCanvasSize(bigScreen: boolean, midScreen: boolean): n
   return 250;
 }
 
-export function getContext(canvas?: CanvasOrNull): Context {
-  if (!canvas) throw new Error('Canvas is not defined.');
+export function getContext(canvas?: CanvasOrNull): Context | null {
+  if (!canvas) return null;
   const { height, width } = canvas;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Unable to get context.');
+  if (!ctx) return null;
   return { ctx, height, width };
 }
 
