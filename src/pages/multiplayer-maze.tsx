@@ -1,28 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
 import Nav from '../components/nav';
 import QuestionModal from '../components/question-modal';
 import Leaderboard from '../components/leaderboard';
-import { IDLE_CONTROL, TOAST_CONFIG } from '../constants';
+import { FIREBASE_CONFIG, IDLE_CONTROL, TOAST_CONFIG } from '../constants';
 import getCanvasSize, { getOnKey, getOffKey } from '../lib/misc-util';
 import MultiplayerGame from '../lib/multiplayer-game';
 import { CallBack, Control, Gold, Player } from '../type';
-
-const onGameOver: CallBack = (win) => {
-  if (win) {
-    toast.success('Congrats, You won the game 🚀', TOAST_CONFIG);
-  } else {
-    // Only show "Too Slow" if the user was actually playing
-    // and not just joining a finished game
-    const playerName = localStorage.getItem('playerName');
-    if (playerName) {
-      toast.error('Match Ended! Check the leaderboard.', TOAST_CONFIG);
-    }
-  }
-};
 
 const callBack: CallBack = (success, msg) => {
   if (success) toast.success(msg, TOAST_CONFIG);
@@ -38,6 +28,7 @@ const createOnLeave = (cleanUp: () => void) => {
 };
 
 function MultiplayerMaze(): JSX.Element {
+  const history = useHistory();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bigScreen = useMediaQuery({ query: '(min-width: 600px)' });
   const midScreen = useMediaQuery({ query: '(min-width: 400px)' });
@@ -58,13 +49,38 @@ function MultiplayerMaze(): JSX.Element {
   const [isFinished, setIsFinished] = useState(false);
   const [collectedCount, setCollectedCount] = useState(0);
 
+  useEffect(() => {
+    const playerName = localStorage.getItem('playerName');
+    const roomCode = localStorage.getItem('roomCode');
+    if (!playerName || !roomCode) {
+      history.push('/start');
+      return undefined;
+    }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+
+    const unsubscribe = firebase
+      .app()
+      .firestore()
+      .collection('rooms')
+      .doc(roomCode)
+      .onSnapshot((snapshot) => {
+        const status = snapshot.data()?.status || 'waiting';
+        if (status !== 'started') {
+          history.push('/lobby');
+        }
+      });
+
+    return () => unsubscribe();
+  }, [history]);
+
   const animate: FrameRequestCallback = useCallback(() => {
-    // Freeze movement if question modal is open
     if (!hitGoldRef.current) {
       gameRef.current?.performMove(control.current);
     }
     gameRef.current?.render();
-    gameRef.current?.renderMinimap();
     animationRef.current = requestAnimationFrame(animate);
   }, []);
 
@@ -77,7 +93,7 @@ function MultiplayerMaze(): JSX.Element {
         } else {
           const playerName = localStorage.getItem('playerName');
           if (playerName) {
-            toast.error('Match Ended! Check the leaderboard.', TOAST_CONFIG);
+            toast.error('Trận đấu đã kết thúc. Hãy xem bảng xếp hạng.', TOAST_CONFIG);
           }
           setIsGameOver(true);
         }
@@ -132,9 +148,8 @@ function MultiplayerMaze(): JSX.Element {
   return (
     <>
       <Nav />
-      {/* Global Timer and Collected Count Overlay */}
       <div className="timer-overlay">
-        <span className="timer-label">Time Left:</span>
+        <span className="timer-label">Thời gian còn lại:</span>
         <span className="timer-value">{formatTime(timeLeft)}</span>
       </div>
       <div className="timer-overlay" style={{ right: '20px', left: 'auto' }}>
@@ -152,7 +167,7 @@ function MultiplayerMaze(): JSX.Element {
         <div className="live-leaderboard-wrapper">
           <Leaderboard
             players={allPlayers}
-            title="Live Rankings"
+            title="Bảng xếp hạng trực tiếp"
             myUID={gameRef.current?.getMyPlayerId()}
           />
         </div>
@@ -169,12 +184,12 @@ function MultiplayerMaze(): JSX.Element {
               const collected = await gameRef.current?.collectGold(hitGold);
               if (collected) {
                 setCollectedCount((prev) => prev + 1);
-                toast.success('Correct! Gold collected 💰', TOAST_CONFIG);
+                toast.success('Chính xác! Bạn đã thu thập được tài liệu.', TOAST_CONFIG);
               } else {
-                toast.info('Gold này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
+                toast.info('Tài liệu này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
               }
             } else {
-              toast.error('Wrong answer! Try again later.', TOAST_CONFIG);
+              toast.error('Sai câu trả lời. Hãy thử lại sau.', TOAST_CONFIG);
             }
             hitGoldRef.current = null;
             setHitGold(null);
@@ -186,11 +201,18 @@ function MultiplayerMaze(): JSX.Element {
         <div className="game-over-overlay">
           <Leaderboard
             players={allPlayers.filter((p) => p.finishTime)}
-            title="Match Results"
+            title="Kết quả trận đấu"
             myUID={gameRef.current?.getMyPlayerId()}
           />
-          <div className="mt-4" style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <button type="button" className="menu-btn btn-play" onClick={() => window.location.reload()}>
+          <div
+            className="mt-4"
+            style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}
+          >
+            <button
+              type="button"
+              className="menu-btn btn-play"
+              onClick={() => window.location.reload()}
+            >
               Chơi lại
             </button>
             <button
@@ -198,10 +220,12 @@ function MultiplayerMaze(): JSX.Element {
               className="menu-btn btn-rule"
               onClick={() => {
                 localStorage.removeItem('playerName');
+                localStorage.removeItem('roomCode');
+                localStorage.removeItem('isHost');
                 window.location.href = '#/';
               }}
             >
-              Thoát ra Menu
+              Thoát ra menu
             </button>
           </div>
         </div>

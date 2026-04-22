@@ -116,6 +116,41 @@ color: white; */
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2) !important;
 }
 
+.lobby-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.lobby-meta-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lobby-meta-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lobby-meta-value {
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.lobby-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
 @keyframes fadeInDown {
   from {
     opacity: 0;
