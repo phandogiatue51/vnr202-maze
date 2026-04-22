@@ -1,13 +1,5 @@
 import { ToastPosition } from 'react-toastify';
-import { Control, Cord, Direction, Link, StringMap } from './type';
-
-const LINKS: Array<Link> = [
-  // { name: 'Home', url: 'https://shuby-mao.web.app/' },
-  // { name: 'Project Page', url: 'https://shuby-mao.web.app/projects/web-multiplayer-maze' },
-  // { name: 'Multiplayer Maze', url: '/' },
-  // { name: 'Offline Maze', url: '/offline' },
-  // { name: 'Generation Demo', url: '/generation-demo' }
-];
+import { Control, Cord, Direction, StringMap } from './type';
 
 export const FIREBASE_CONFIG = {
   apiKey: process.env.REACT_APP_firebase_apiKey || process.env.REACT_APP_FIREBASE_API_KEY,
@@ -64,8 +56,6 @@ export const END_COLOR = '#10B981';
 export const BORDER_COLOR = '#64748b';
 export const INDICATOR_COLOR = '#FF0000';
 export const DEFAULT_PLAYER_COLOR = '#FBBF24';
-export const MAZE_SIZE = 31;
+export const MAZE_SIZE = 56;
 export const MAZE_SEED = 12345;
 export const VIEWPORT_SIZE = 3;
-
-export default LINKS;

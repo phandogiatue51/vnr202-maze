@@ -3,8 +3,6 @@ import { useHistory } from 'react-router-dom';
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
-import Nav from '../components/nav';
-import Leaderboard from '../components/leaderboard';
 import { FIREBASE_CONFIG } from '../constants';
 import { Player } from '../type';
 import './home-page.css';
@@ -295,7 +293,6 @@ const LobbyPage: React.FC = () => {
 
   return (
     <>
-      <Nav />
       <div
         className="home-container"
         style={{
@@ -337,14 +334,33 @@ const LobbyPage: React.FC = () => {
 
           <div
             style={{
-              maxHeight: '400px',
-              overflowY: 'auto',
-              marginBottom: '20px',
               display: 'flex',
-              justifyContent: 'center'
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '20px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '15px',
+              marginBottom: '20px',
+              width: '100%'
             }}
           >
-            <Leaderboard players={players} title="Danh sách người chơi" myUID={myUID} />
+            {players.map((p) => (
+              <span
+                key={p.id}
+                style={{
+                  fontSize: '1.1rem',
+                  color: p.id === myUID ? '#fbbf24' : '#fff',
+                  fontWeight: p.id === myUID ? 'bold' : 'normal',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  padding: '8px 16px',
+                  borderRadius: '30px',
+                  border: `1px solid ${p.id === myUID ? '#fbbf24' : 'rgba(255, 255, 255, 0.2)'}`
+                }}
+              >
+                {p.name} {p.id === myUID && '(Bạn)'}
+              </span>
+            ))}
           </div>
 
           <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
@@ -356,45 +372,56 @@ const LobbyPage: React.FC = () => {
               {isHost && <span className="badge bg-warning text-dark"> [CHỦ PHÒNG]</span>}
             </div>
 
-            <div className="lobby-action-grid">
+            <div className="flex flex-col gap-3 w-full max-w-md mx-auto p-4">
+              {/* COPY CODE BUTTON - Secondary Outline */}
               <button
                 type="button"
                 onClick={handleCopyRoomCode}
-                className="btn btn-outline-light"
-                style={{ borderRadius: '12px', border: '2px solid #fbbf24' }}
+                className="px-4 py-3 rounded-xl font-bold border-2 border-amber-400 text-amber-400 
+               transition-all duration-200 hover:bg-amber-400 hover:text-slate-900 
+               active:scale-95 focus:outline-none"
               >
                 {getCopyButtonText()}
               </button>
 
               {isHost && (
                 <>
+                  {/* START GAME BUTTON - Primary Solid (Full Width) */}
                   <button
                     type="button"
                     onClick={handleStartGame}
-                    className="btn btn-warning btn-lg fw-bold"
-                    style={{ borderRadius: '12px', border: '2px solid #fbbf24' }}
                     disabled={players.length < 1 || loading}
+                    className="col-span-2 px-4 py-4 rounded-xl font-black text-lg uppercase tracking-wider
+                   bg-amber-400 text-slate-900 border-b-4 border-amber-600
+                   transition-all duration-100 hover:bg-amber-300 hover:-translate-y-0.5
+                   active:translate-y-0.5 active:border-b-0
+                   disabled:opacity-50 disabled:grayscale disabled:pointer-events-none"
                   >
-                    Bắt đầu trò chơi
+                    {loading ? 'Đang tải...' : 'Bắt đầu trò chơi'}
                   </button>
+
+                  {/* RESET BUTTON - Danger Outline */}
                   <button
                     type="button"
                     onClick={handleResetLobby}
-                    className="btn btn-outline-danger"
-                    style={{ borderRadius: '12px', border: '2px solid #f87171' }}
+                    className="px-4 py-3 rounded-xl font-bold border-2 border-red-400 text-red-400 
+                   transition-all duration-200 hover:bg-red-400 hover:text-white 
+                   active:scale-95 focus:outline-none"
                   >
-                    Đặt lại về trạng thái chờ
+                    Đặt lại phòng
                   </button>
                 </>
               )}
 
+              {/* LEAVE BUTTON - Neutral Outline */}
               <button
                 type="button"
                 onClick={handleLeaveLobby}
-                className="btn btn-outline-secondary"
-                style={{ borderRadius: '12px', border: '2px solid #6b7280' }}
+                className="px-4 py-3 rounded-xl font-bold border-2 border-gray-500 text-gray-500 
+               transition-all duration-200 hover:bg-gray-500 hover:text-white 
+               active:scale-95 focus:outline-none"
               >
-                Rời sảnh và đổi tên
+                Rời sảnh & Đổi tên
               </button>
             </div>
           </div>

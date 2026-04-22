@@ -83,29 +83,58 @@ export function visit(cord: Cord): void {
   seen[r][c] = true;
 }
 
-async function depthFirstSearch(cord: Cord, update?: OnUpdate): Promise<void> {
-  const dirs = getDirs();
-  visit(cord);
-  if (update) await update(maze, cord);
-  for (const dir of dirs) {
-    const nextCord = getNextCord(cord, dir);
-    if (!isOutOfBound(maze, nextCord) && !isVisited(nextCord)) {
-      breakWall(maze, cord, dir);
-      breakWall(maze, nextCord, getOPDir(dir));
-      await depthFirstSearch(nextCord, update);
+async function depthFirstSearch(startCord: Cord, update?: OnUpdate): Promise<void> {
+  const stack: Cord[] = [startCord];
+  visit(startCord);
+  if (update) await update(maze, startCord);
+
+  while (stack.length > 0) {
+    const current = stack[stack.length - 1];
+    const dirs = getDirs();
+    let found = false;
+
+    for (const dir of dirs) {
+      const next = getNextCord(current, dir);
+      if (!isOutOfBound(maze, next) && !isVisited(next)) {
+        breakWall(maze, current, dir);
+        breakWall(maze, next, getOPDir(dir));
+        visit(next);
+        if (update) await update(maze, next);
+        stack.push(next);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      stack.pop();
     }
   }
 }
 
-function depthFirstSearchSync(cord: Cord): void {
-  const dirs = getDirs();
-  visit(cord);
-  for (const dir of dirs) {
-    const nextCord = getNextCord(cord, dir);
-    if (!isOutOfBound(maze, nextCord) && !isVisited(nextCord)) {
-      breakWall(maze, cord, dir);
-      breakWall(maze, nextCord, getOPDir(dir));
-      depthFirstSearchSync(nextCord);
+function depthFirstSearchSync(startCord: Cord): void {
+  const stack: Cord[] = [startCord];
+  visit(startCord);
+
+  while (stack.length > 0) {
+    const current = stack[stack.length - 1];
+    const dirs = getDirs();
+    let found = false;
+
+    for (const dir of dirs) {
+      const next = getNextCord(current, dir);
+      if (!isOutOfBound(maze, next) && !isVisited(next)) {
+        breakWall(maze, current, dir);
+        breakWall(maze, next, getOPDir(dir));
+        visit(next);
+        stack.push(next);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      stack.pop();
     }
   }
 }

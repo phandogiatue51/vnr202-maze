@@ -3,7 +3,6 @@ import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
-import Nav from '../components/nav';
 import { IDLE_CONTROL, INSTRUCTION, TOAST_CONFIG } from '../constants';
 import Game from '../lib/game';
 import getCanvasSize, { getOnKey, getOffKey } from '../lib/misc-util';
@@ -44,7 +43,6 @@ function OfflineMaze(): JSX.Element {
 
   return (
     <Container onKeyDown={onKey} onKeyUp={offKey}>
-      <Nav />
       <h1 className="text-4xl my-4 text-center">Offline Maze Level {level}</h1>
       <p>{INSTRUCTION}</p>
       <Canvas ref={canvasRef} size={canvasSize} />
