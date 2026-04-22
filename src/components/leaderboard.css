@@ -5,8 +5,9 @@
   padding: 0;
   color: white;
   box-shadow: none;
-  max-width: none;
+  max-width: 800px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .leaderboard-title {
@@ -16,7 +17,7 @@
   margin-bottom: 1.1rem;
   text-transform: uppercase;
   letter-spacing: 0.04rem;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid rgba(251, 191, 36, 0.16);
   padding-bottom: 0.9rem;
 }
@@ -28,7 +29,7 @@
 }
 
 .leaderboard-table th {
-  text-align: left;
+  text-align: center;
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06rem;
@@ -53,6 +54,7 @@
   padding: 16px 12px;
   font-size: 1rem;
   background: rgba(255, 255, 255, 0.05);
+  text-align: center;
 }
 
 .rank-badge {
@@ -66,6 +68,7 @@
   font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.8);
+  margin: 0 auto;
 }
 
 .rank-1 {
@@ -110,7 +113,7 @@
 
 .status-cell {
   font-size: 0.9rem;
-  text-align: right;
+  text-align: center;
 }
 
 .status-finished {

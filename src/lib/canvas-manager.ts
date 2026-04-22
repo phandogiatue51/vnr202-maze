@@ -230,14 +230,10 @@ export default class CanvasManager {
       this.ctx.textAlign = 'center';
       this.ctx.lineWidth = Math.max(2, fontSize * 0.18);
       this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.95)';
-      this.ctx.shadowColor = 'rgba(0,0,0,0.35)';
-      this.ctx.shadowBlur = 6;
       const x = this.cCord(cord.c);
       const y = this.rCord(cord.r) - this.playerRadius - 4;
       this.ctx.strokeText(name, x, y);
       this.ctx.fillText(name, x, y);
-      this.ctx.shadowColor = 'transparent';
-      this.ctx.shadowBlur = 0;
     }
   };
 
