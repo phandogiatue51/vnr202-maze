@@ -25,6 +25,8 @@ export default class MultiplayerGame {
 
   private unsubscribePlayers?: () => void;
 
+  private unsubscribeGolds?: () => void;
+
   private counter = 0;
 
   private golds: Gold[] = [];
@@ -49,6 +51,7 @@ export default class MultiplayerGame {
   private onStatusUpdate?: (status: 'waiting' | 'started') => void;
 
   private onPlayersUpdate?: (players: Player[]) => void;
+  private isFirebaseReady = false;
 
   private timerInterval?: NodeJS.Timeout;
   private secondsLeft = 300; // 5 minutes default
@@ -72,7 +75,22 @@ export default class MultiplayerGame {
     this.onTimerUpdate = onTimerUpdate;
     this.onStatusUpdate = onStatusUpdate;
     this.onPlayersUpdate = onPlayersUpdate;
-    this.initFirebaseService();
+    try {
+      this.initFirebaseService();
+      this.isFirebaseReady = true;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unable to initialize multiplayer services. Please check Firebase settings.';
+      if (this.callBack) {
+        this.callBack(false, message);
+      }
+      // Fallback so the game screen still renders even when Firebase is not configured.
+      this.initNewGame(12345);
+      this.startLocalTimer(Date.now() + 300 * 1000);
+      console.error('Multiplayer initialization failed:', error);
+    }
   }
 
   public performMove = (control: Control): void => {
@@ -98,6 +116,18 @@ export default class MultiplayerGame {
     if (this.canvas) this.game?.renderGame();
   };
 
+  public renderMinimap = (): void => {
+    if (!this.game) return;
+    const maze = this.game.getMaze();
+    const golds = this.game.getGoldItems();
+    const canvasManager = this.game.getCanvasManager();
+    const players = this.getPlayers();
+    const myId = this.myUID;
+    if (myId) {
+      canvasManager.drawMinimap(maze, golds, players, myId);
+    }
+  };
+
   public setCanvas = (canvas: CanvasOrNull): void => {
     this.canvas = canvas;
     if (this.game) this.game.setCanvas(canvas);
@@ -116,11 +146,11 @@ export default class MultiplayerGame {
   };
 
   public startGame = async (): Promise<void> => {
-    if (!this.myUID) return;
+    if (!this.isFirebaseReady || !this.myUID) return;
     const now = Date.now();
     this.startTime = now;
     this.secondsLeft = 300; // 5 minutes
-    
+
     await this.firestore.collection('players').doc(this.myUID).update({
       startTime: now,
       finishTime: null,
@@ -134,6 +164,7 @@ export default class MultiplayerGame {
   };
 
   public purgePlayers = async (): Promise<void> => {
+    if (!this.isFirebaseReady) return;
     const snapshot = await this.firestore.collection('players').get();
     const batch = this.firestore.batch();
     snapshot.docs.forEach((doc) => {
@@ -142,28 +173,63 @@ export default class MultiplayerGame {
     await batch.commit();
   };
 
-  public collectGold = async (gold: Gold): Promise<void> => {
-    if (!this.myUID) return;
-    const playerRef = this.firestore.collection('players').doc(this.myUID);
-
-    // Mark locally as collected
-    const goldItem = this.golds.find((g) => g.id === gold.id);
-    if (goldItem) {
-      goldItem.collectedBy = this.myUID;
+  public collectGold = async (gold: Gold): Promise<boolean> => {
+    if (!this.isFirebaseReady || !this.myUID) {
+      const localGold = this.golds.find((g) => g.id === gold.id);
+      if (!localGold || localGold.collectedBy) return false;
+      localGold.collectedBy = 'local-player';
       if (this.game) this.game.setGoldItems(this.golds);
+      return true;
     }
 
-    await this.firestore.runTransaction(async (transaction) => {
-      const doc = await transaction.get(playerRef);
-      if (doc.exists) {
-        const data = doc.data();
-        const currentGold = data?.goldCount || 0;
-        transaction.update(playerRef, { goldCount: currentGold + 1 });
+    const playerRef = this.firestore.collection('players').doc(this.myUID);
+    const goldRef = this.firestore.collection('golds').doc(gold.id);
+
+    const collected = await this.firestore.runTransaction(async (transaction) => {
+      const goldDoc = await transaction.get(goldRef);
+      const goldData = goldDoc.data();
+      if (goldData?.collectedBy) {
+        return false;
       }
+
+      const playerDoc = await transaction.get(playerRef);
+      const currentGold = playerDoc.data()?.goldCount || 0;
+
+      transaction.set(
+        goldRef,
+        {
+          collectedBy: this.myUID,
+          collectedAt: Date.now()
+        },
+        { merge: true }
+      );
+
+      if (playerDoc.exists) {
+        transaction.update(playerRef, { goldCount: currentGold + 1 });
+      } else {
+        transaction.set(playerRef, { goldCount: 1 }, { merge: true });
+      }
+
+      return true;
     });
+
+    if (collected) {
+      const goldItem = this.golds.find((g) => g.id === gold.id);
+      if (goldItem) {
+        goldItem.collectedBy = this.myUID;
+        if (this.game) this.game.setGoldItems(this.golds);
+      }
+    }
+
+    return collected;
   };
 
   public enterGame = (name: string): void => {
+    if (!this.isFirebaseReady) {
+      const me = this.game?.getMyPlayer();
+      if (me) me.name = name;
+      return;
+    }
     this.isEntered = true;
     this.playerName = name;
     if (this.myUID) {
@@ -175,12 +241,21 @@ export default class MultiplayerGame {
     if (this.unsubscribePlayers) {
       this.unsubscribePlayers();
     }
+    if (this.unsubscribeGolds) {
+      this.unsubscribeGolds();
+    }
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
   };
 
   private initFirebaseService = () => {
+    if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId || !FIREBASE_CONFIG.appId) {
+      throw new Error(
+        'Firebase config is missing. Please set REACT_APP_FIREBASE_* (or REACT_APP_firebase_*) variables.'
+      );
+    }
+
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
@@ -212,6 +287,7 @@ export default class MultiplayerGame {
   };
 
   private syncPlayer = async () => {
+    if (!this.isFirebaseReady) return;
     const name = this.playerName || localStorage.getItem('playerName') || 'Anonymous';
     if (!this.myUID) return;
 
@@ -222,7 +298,7 @@ export default class MultiplayerGame {
     try {
       const doc = await playerRef.get();
       const now = Date.now();
-      
+
       if (!doc.exists) {
         this.startTime = now;
         await playerRef.set({
@@ -244,20 +320,46 @@ export default class MultiplayerGame {
         this.startLocalTimer((this.startTime || now) + 300 * 1000);
       }
       this.initNewGame(12345);
+      this.addGoldsListener();
     } catch (e) {
       console.error('Sync player failed:', e);
     }
   };
 
+  private addGoldsListener = (): void => {
+    if (!this.isFirebaseReady) return;
+    if (this.unsubscribeGolds) {
+      this.unsubscribeGolds();
+    }
+
+    this.unsubscribeGolds = this.firestore.collection('golds').onSnapshot((snapshot) => {
+      const goldOwners = new Map<string, string | null>();
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        goldOwners.set(doc.id, data?.collectedBy || null);
+      });
+
+      this.golds = this.golds.map((gold) => ({
+        ...gold,
+        collectedBy: goldOwners.get(gold.id) || null
+      }));
+
+      if (this.game) {
+        this.game.setGoldItems(this.golds);
+      }
+    });
+  };
+
   private addPlayersListener = (): void => {
+    if (!this.isFirebaseReady) return;
     this.unsubscribePlayers = this.firestore.collection('players').onSnapshot((snapshot) => {
       this.players.clear();
       this.opPositions.clear();
-      
+
       snapshot.forEach((doc) => {
         const id = doc.id;
         const p = doc.data();
-        
+
         const player: Player = {
           id,
           location: { r: p.r || 0, c: p.c || 0 },
@@ -267,7 +369,7 @@ export default class MultiplayerGame {
           joinedAt: p.joinedAt,
           startTime: p.startTime
         };
-        
+
         this.players.set(id, player);
         if (id !== this.myUID) {
           this.opPositions.set(id, player.location);
@@ -288,16 +390,18 @@ export default class MultiplayerGame {
   // registerPlayer is now merged into syncPlayer
 
   public removePlayerExplicitly = async (): Promise<void> => {
-    if (this.myUID) {
+    if (this.isFirebaseReady && this.myUID) {
       await this.firestore.collection('players').doc(this.myUID).delete();
     }
   };
 
   private removePlayer = async (player: Player): Promise<void> => {
+    if (!this.isFirebaseReady) return;
     await this.firestore.collection('players').doc(player.id).delete();
   };
 
   private updateMyLocation = (): void => {
+    if (!this.isFirebaseReady) return;
     const myPlayer = this.game?.getMyPlayer();
     if (!myPlayer || !this.myUID) return;
     const newPos = myPlayer.location;
@@ -337,7 +441,7 @@ export default class MultiplayerGame {
 
       if (secondsLeft <= 0) {
         if (this.timerInterval) clearInterval(this.timerInterval);
-        
+
         if (!this.isWinner) {
           // Set finishTime to now if they didn't win but time ran out
           if (this.myUID) {

@@ -8,7 +8,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="home-container">
       <div className="title-section">
-        <h1 className="game-title">TITLE</h1>
+        <h1 className="game-title">ĐƯỜNG HẦM ĐỊA ĐẠO</h1>
         <p className="game-subtitle">Hành Trình Di Sản</p>
       </div>
 

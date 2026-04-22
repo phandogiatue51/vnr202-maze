@@ -148,16 +148,67 @@ export default class CanvasManager {
   };
 
   private drawGoldFallback = (cord: Cord): void => {
-    this.ctx.fillStyle = '#FBBF24'; // Warning color (Yellow)
-    this.ctx.beginPath();
     const x = this.cCord(cord.c);
     const y = this.rCord(cord.r);
-    this.ctx.arc(x, y, this.cellSize * 0.3, 0, TWO_PI);
-    this.ctx.fill();
-    this.ctx.strokeStyle = 'white';
+    const width = this.cellSize * 0.45;
+    const height = this.cellSize * 0.65;
+    const offset = width * 0.1;
+
+    // Draw back document (darker, offset)
+    this.ctx.fillStyle = '#1a2332';
+    this.ctx.fillRect(x - width / 2 + offset, y - height / 2 + offset, width, height);
+
+    // Draw front document (white)
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(x - width / 2, y - height / 2, width, height);
+    this.ctx.strokeStyle = '#000000';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(x - width / 2, y - height / 2, width, height);
+
+    // Draw document lines on front
+    this.ctx.strokeStyle = '#000000';
     this.ctx.lineWidth = 1;
+    const lineX1 = x - width / 2 + 4;
+    const lineX2 = x + width / 2 - 4;
+    const lineY1 = y - height / 2 + height * 0.2;
+    const lineY2 = y - height / 2 + height * 0.4;
+    const lineY3 = y - height / 2 + height * 0.6;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(lineX1, lineY1);
+    this.ctx.lineTo(lineX2, lineY1);
+    this.ctx.moveTo(lineX1, lineY2);
+    this.ctx.lineTo(lineX2, lineY2);
+    this.ctx.moveTo(lineX1, lineY3);
+    this.ctx.lineTo(lineX2, lineY3);
     this.ctx.stroke();
+
+    // Draw fold corner on top-right (large and prominent)
+    const foldWidth = width * 0.3;
+    const foldHeight = height * 0.25;
+    // Fill fold area with light gray
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + width / 2, y - height / 2);
+    this.ctx.lineTo(x + width / 2 - foldWidth, y - height / 2);
+    this.ctx.lineTo(x + width / 2, y - height / 2 + foldHeight);
     this.ctx.closePath();
+    this.ctx.fill();
+
+    // Draw fold border and diagonal line
+    this.ctx.strokeStyle = '#000000';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + width / 2 - foldWidth, y - height / 2);
+    this.ctx.lineTo(x + width / 2, y - height / 2);
+    this.ctx.lineTo(x + width / 2, y - height / 2 + foldHeight);
+    this.ctx.stroke();
+
+    // Draw diagonal fold line
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + width / 2 - foldWidth, y - height / 2);
+    this.ctx.lineTo(x + width / 2, y - height / 2 + foldHeight);
+    this.ctx.stroke();
   };
 
   public drawPlayer = (
@@ -254,5 +305,86 @@ export default class CanvasManager {
     else this.ctx.lineTo(this.cCord(c), this.rCord(r + 1));
     this.ctx.closePath();
     this.ctx.stroke();
+  };
+
+  public drawMinimap = (
+    maze: Cell[][],
+    golds: Gold[],
+    players: { id: string; location: Cord }[],
+    myId: string
+  ): void => {
+    if (!this.ctx || !maze || maze.length === 0) return;
+
+    const minimapX = this.width - 180;
+    const minimapY = this.height - 180;
+    const minimapSize = 160;
+    const cellPixelSize = minimapSize / maze.length;
+
+    // Draw minimap background
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(minimapX - 5, minimapY - 5, minimapSize + 10, minimapSize + 10);
+    this.ctx.strokeStyle = '#FFB84D';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(minimapX - 5, minimapY - 5, minimapSize + 10, minimapSize + 10);
+
+    // Draw maze grid
+    this.ctx.strokeStyle = '#444444';
+    this.ctx.lineWidth = 0.5;
+    for (let r = 0; r < maze.length; r++) {
+      for (let c = 0; c < maze[r].length; c++) {
+        const x = minimapX + c * cellPixelSize;
+        const y = minimapY + r * cellPixelSize;
+        const cell = maze[r][c];
+
+        // Draw walls
+        if (hasDirection(cell, Direction.TOP)) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(x, y);
+          this.ctx.lineTo(x + cellPixelSize, y);
+          this.ctx.stroke();
+        }
+        if (hasDirection(cell, Direction.LEFT)) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(x, y);
+          this.ctx.lineTo(x, y + cellPixelSize);
+          this.ctx.stroke();
+        }
+      }
+    }
+
+    // Draw golds (uncollected ones)
+    golds.forEach((gold) => {
+      if (!gold.collectedBy) {
+        const x = minimapX + gold.location.c * cellPixelSize + cellPixelSize / 2;
+        const y = minimapY + gold.location.r * cellPixelSize + cellPixelSize / 2;
+        this.ctx.fillStyle = '#FFA500';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 3, 0, TWO_PI);
+        this.ctx.fill();
+      }
+    });
+
+    // Draw players
+    players.forEach((player) => {
+      const x = minimapX + player.location.c * cellPixelSize + cellPixelSize / 2;
+      const y = minimapY + player.location.r * cellPixelSize + cellPixelSize / 2;
+
+      if (player.id === myId) {
+        // Highlight current player with cyan circle
+        this.ctx.fillStyle = '#00FF00';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 4, 0, TWO_PI);
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#00FF00';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+      } else {
+        // Other players
+        this.ctx.fillStyle = '#00CC00';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2.5, 0, TWO_PI);
+        this.ctx.fill();
+      }
+    });
   };
 }
