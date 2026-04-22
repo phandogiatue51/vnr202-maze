@@ -283,6 +283,16 @@ const LobbyPage: React.FC = () => {
     return 'Đang chờ chủ phòng bắt đầu cuộc đua...';
   };
 
+  const getCopyButtonText = (): string => {
+    if (copyState === 'copied') {
+      return 'Đã sao chép mã phòng';
+    }
+    if (copyState === 'failed') {
+      return 'Không thể sao chép';
+    }
+    return 'Sao chép mã phòng';
+  };
+
   return (
     <>
       <Nav />
@@ -353,11 +363,7 @@ const LobbyPage: React.FC = () => {
                 className="btn btn-outline-light"
                 style={{ borderRadius: '12px', border: '2px solid #fbbf24' }}
               >
-                {copyState === 'copied'
-                  ? 'Đã sao chép mã phòng'
-                  : copyState === 'failed'
-                    ? 'Không thể sao chép'
-                    : 'Sao chép mã phòng'}
+                {getCopyButtonText()}
               </button>
 
               {isHost && (
