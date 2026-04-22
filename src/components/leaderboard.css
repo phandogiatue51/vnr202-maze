@@ -123,6 +123,11 @@
   font-style: italic;
 }
 
+.status-pending {
+  color: #fca5a5;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .leaderboard-title {
     font-size: 1.45rem;

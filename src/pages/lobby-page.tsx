@@ -34,6 +34,7 @@ const LobbyPage: React.FC = () => {
 
   const roomCode = useMemo(() => localStorage.getItem('roomCode') || '', []);
   const playerName = useMemo(() => localStorage.getItem('playerName') || '', []);
+  const creatorFlag = useMemo(() => localStorage.getItem('isHost') === 'true', []);
   const db = useMemo(() => getApp().firestore(), []);
   const auth = useMemo(() => getApp().auth(), []);
   const playersCol = useMemo(() => db.collection('rooms').doc(roomCode).collection('players'), [
@@ -105,6 +106,7 @@ const LobbyPage: React.FC = () => {
             c: 0.5,
             goldCount: 0,
             finishTime: null,
+            reachedGoal: false,
             joinedAt: Date.now(),
             startTime: null
           },
@@ -122,6 +124,7 @@ const LobbyPage: React.FC = () => {
               location: { r: p.r || 0, c: p.c || 0 },
               goldCount: p.goldCount || 0,
               finishTime: p.finishTime,
+              reachedGoal: Boolean(p.reachedGoal),
               joinedAt: p.joinedAt,
               startTime: p.startTime
             });
@@ -185,8 +188,10 @@ const LobbyPage: React.FC = () => {
     };
   }, [auth, db, history, lobbyDoc, playerName, playersCol]);
 
+  const canManageLobby = isHost || creatorFlag;
+
   const handleStartGame = async () => {
-    if (!isHost || !myUID) return;
+    if (!canManageLobby || !myUID) return;
     const now = Date.now();
 
     const snapshot = await playersCol.get();
@@ -197,6 +202,7 @@ const LobbyPage: React.FC = () => {
         {
           startTime: now,
           finishTime: null,
+          reachedGoal: false,
           goldCount: 0,
           r: 0.5,
           c: 0.5
@@ -220,7 +226,7 @@ const LobbyPage: React.FC = () => {
   };
 
   const handleResetLobby = async () => {
-    if (!isHost || !myUID) return;
+    if (!canManageLobby || !myUID) return;
     await lobbyDoc.set(
       {
         hostId: myUID,
@@ -275,7 +281,7 @@ const LobbyPage: React.FC = () => {
     if (loading) {
       return 'Đang kết nối vào sảnh chờ...';
     }
-    if (isHost) {
+    if (canManageLobby) {
       return 'Bạn là chủ phòng. Khi mọi người đã sẵn sàng, hãy bắt đầu trận đấu.';
     }
     return 'Bạn đang chờ chủ phòng bắt đầu trận đấu.';
@@ -321,7 +327,7 @@ const LobbyPage: React.FC = () => {
           </div>
           <div className="lobby-meta-card">
             <span className="lobby-meta-label">Vai trò</span>
-            <strong className="lobby-meta-value">{isHost ? 'Chủ phòng' : 'Thành viên'}</strong>
+            <strong className="lobby-meta-value">{canManageLobby ? 'Chủ phòng' : 'Thành viên'}</strong>
           </div>
         </div>
 
@@ -329,7 +335,9 @@ const LobbyPage: React.FC = () => {
           <div className="lobby-section-header">
             <div>
               <h3 className="lobby-section-title">Người đang trong phòng</h3>
-              <p className="lobby-section-subtitle">Kiểm tra nhanh ai đã sẵn sàng trước khi bắt đầu.</p>
+              <p className="lobby-section-subtitle">
+                Kiểm tra nhanh ai đã sẵn sàng trước khi bắt đầu.
+              </p>
             </div>
             <div className="lobby-user-badge">
               <span className="lobby-user-badge-label">Bạn</span>
@@ -379,7 +387,9 @@ const LobbyPage: React.FC = () => {
           <div className="lobby-section-header">
             <div>
               <h3 className="lobby-section-title">Điều khiển phòng</h3>
-              <p className="lobby-section-subtitle">Sao chép mã phòng hoặc bắt đầu khi mọi người đã vào đủ.</p>
+              <p className="lobby-section-subtitle">
+                Sao chép mã phòng hoặc bắt đầu khi mọi người đã vào đủ.
+              </p>
             </div>
           </div>
 
@@ -388,7 +398,7 @@ const LobbyPage: React.FC = () => {
               {getCopyButtonText()}
             </button>
 
-            {isHost && (
+            {canManageLobby && (
               <button
                 type="button"
                 onClick={handleStartGame}
@@ -399,7 +409,7 @@ const LobbyPage: React.FC = () => {
               </button>
             )}
 
-            {isHost && (
+            {canManageLobby && (
               <button type="button" onClick={handleResetLobby} className="menu-btn btn-danger-soft">
                 Đặt lại phòng
               </button>

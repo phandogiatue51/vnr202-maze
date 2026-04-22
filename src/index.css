@@ -5,6 +5,8 @@
 
 body {
   background:
+    linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    url('./assets/bg-01.jpg') center / cover no-repeat fixed,
     radial-gradient(circle at top, rgba(251, 191, 36, 0.08), transparent 22%),
     radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 25%),
     #0f172a;
@@ -30,6 +32,17 @@ body {
   margin: 0 auto;
   min-height: 100vh;
   align-items: stretch;
+  position: relative;
+  z-index: 0;
+}
+
+.game-layout::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .maze-stage {

@@ -14,7 +14,7 @@ import {
 import { getContext } from './misc-util';
 
 const TWO_PI = 2 * Math.PI;
-const DEFAULT_STOKE_WIDTH = 1;
+const DEFAULT_STOKE_WIDTH = 5;
 const PLAYER_STOKE_WIDTH = 2;
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -225,13 +225,16 @@ export default class CanvasManager {
 
     if (name) {
       const fontSize = Math.max(10, Math.min(18, this.cellSize * 0.25));
-      this.ctx.fillStyle = 'white';
+      this.ctx.fillStyle = color;
       this.ctx.font = `bold ${fontSize}px Outfit, Inter, sans-serif`;
       this.ctx.textAlign = 'center';
-      this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      this.ctx.shadowBlur = 4;
+      this.ctx.lineWidth = Math.max(2, fontSize * 0.18);
+      this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.95)';
+      this.ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      this.ctx.shadowBlur = 6;
       const x = this.cCord(cord.c);
       const y = this.rCord(cord.r) - this.playerRadius - 4;
+      this.ctx.strokeText(name, x, y);
       this.ctx.fillText(name, x, y);
       this.ctx.shadowColor = 'transparent';
       this.ctx.shadowBlur = 0;

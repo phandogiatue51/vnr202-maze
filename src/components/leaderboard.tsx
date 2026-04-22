@@ -7,26 +7,74 @@ interface LeaderboardProps {
   players: Player[];
   title?: string;
   myUID?: string;
+  variant?: 'live' | 'result';
 }
+
+type RankedPlayer = {
+  player: Player;
+  rank: number;
+};
+
+const getDisplayName = (player: Player): string => {
+  return player.name || `Người chơi ${player.id.substring(0, 4)}`;
+};
+
+const comparePlayers = (a: Player, b: Player): number => {
+  const goldA = a.goldCount || 0;
+  const goldB = b.goldCount || 0;
+  if (goldB !== goldA) return goldB - goldA;
+
+  const reachedA = Boolean(a.reachedGoal);
+  const reachedB = Boolean(b.reachedGoal);
+  if (reachedA !== reachedB) return reachedA ? -1 : 1;
+
+  if (reachedA && reachedB) {
+    const timeA = a.finishTime || Number.MAX_SAFE_INTEGER;
+    const timeB = b.finishTime || Number.MAX_SAFE_INTEGER;
+    if (timeA !== timeB) return timeA - timeB;
+  }
+
+  return getDisplayName(a).localeCompare(getDisplayName(b), 'vi', { sensitivity: 'base' });
+};
+
+const buildRankedPlayers = (players: Player[], variant: 'live' | 'result'): RankedPlayer[] => {
+  const sortedPlayers = [...players].sort(comparePlayers);
+
+  if (variant !== 'result' || sortedPlayers.length === 0) {
+    return sortedPlayers.map((player, index) => ({ player, rank: index + 1 }));
+  }
+
+  const topGold = sortedPlayers[0].goldCount || 0;
+  const topGroup = sortedPlayers.filter((player) => (player.goldCount || 0) === topGold);
+  const topGroupAllNotReached = topGroup.every((player) => !player.reachedGoal);
+
+  if (!topGroupAllNotReached) {
+    return sortedPlayers.map((player, index) => ({ player, rank: index + 1 }));
+  }
+
+  return sortedPlayers.map((player, index) => ({
+    player,
+    rank: index < topGroup.length ? 1 : index + 1
+  }));
+};
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
   players,
   title = 'Bảng xếp hạng trực tiếp',
-  myUID
+  myUID,
+  variant = 'live'
 }) => {
-  const sortedPlayers = useMemo(() => {
-    return [...players].sort((a, b) => {
-      const goldA = a.goldCount || 0;
-      const goldB = b.goldCount || 0;
-      if (goldB !== goldA) return goldB - goldA;
+  const rankedPlayers = useMemo(() => buildRankedPlayers(players, variant), [players, variant]);
 
-      if (a.finishTime && b.finishTime) return a.finishTime - b.finishTime;
-      if (a.finishTime) return -1;
-      if (b.finishTime) return 1;
-
-      return 0;
-    });
-  }, [players]);
+  const getStatusLabel = (player: Player): string => {
+    if (player.reachedGoal) {
+      return 'Về đích';
+    }
+    if (variant === 'result') {
+      return 'Chưa về đích';
+    }
+    return 'Đang thi đấu...';
+  };
 
   return (
     <div className="leaderboard-container">
@@ -41,32 +89,32 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           </tr>
         </thead>
         <tbody>
-          {sortedPlayers.length === 0 ? (
+          {rankedPlayers.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-4 text-white-50">
                 <i>Đợi người chơi tham gia...</i>
               </td>
             </tr>
           ) : (
-            sortedPlayers.map((player, index) => {
+            rankedPlayers.map(({ player, rank }, index) => {
               const isMe = player.id === myUID;
               return (
                 <tr key={player.id} className={isMe ? 'row-me' : ''}>
                   <td>
-                    <span className={`rank-badge rank-${index + 1}`}>{index + 1}</span>
+                    <span className={`rank-badge rank-${Math.min(rank, 3)}`}>{rank}</span>
                   </td>
 
-                  <td className="player-id-cell">
-                    {isMe ? player.name : player.name || `Người chơi ${player.id.substring(0, 4)}`}
-                  </td>
+                  <td className="player-id-cell">{getDisplayName(player)}</td>
                   <td className="gold-cell">
                     <span className="gold-text">{player.goldCount || 0}</span>
                   </td>
                   <td className="status-cell">
-                    {player.finishTime ? (
-                      <span className="status-finished">Hoàn thành!</span>
+                    {player.reachedGoal ? (
+                      <span className="status-finished">{getStatusLabel(player)}</span>
                     ) : (
-                      <span className="status-racing">Đang thi đấu...</span>
+                      <span className={variant === 'result' ? 'status-pending' : 'status-racing'}>
+                        {getStatusLabel(player)}
+                      </span>
                     )}
                   </td>
                 </tr>

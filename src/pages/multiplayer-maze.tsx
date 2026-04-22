@@ -46,7 +46,7 @@ function MultiplayerMaze(): JSX.Element {
   const control = useRef<Control>(IDLE_CONTROL);
   const keyDirs = useRef(0);
   const [hitGold, setHitGold] = useState<Gold | null>(null);
-  const [timeLeft, setTimeLeft] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(600);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -109,6 +109,19 @@ function MultiplayerMaze(): JSX.Element {
       (gold) => {
         hitGoldRef.current = gold;
         setHitGold(gold);
+      },
+      (goldId, collectedBy) => {
+        const activeGold = hitGoldRef.current;
+        const myPlayerId = gameRef.current?.getMyPlayerId();
+
+        if (activeGold?.id === goldId) {
+          hitGoldRef.current = null;
+          setHitGold(null);
+
+          if (collectedBy !== myPlayerId) {
+            toast.info('Tài liệu này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
+          }
+        }
       },
       (seconds) => {
         setTimeLeft(seconds);
@@ -194,6 +207,7 @@ function MultiplayerMaze(): JSX.Element {
             players={allPlayers}
             title="Bảng xếp hạng trực tiếp"
             myUID={gameRef.current?.getMyPlayerId()}
+            variant="live"
           />
         </div>
       </div>
@@ -228,18 +242,12 @@ function MultiplayerMaze(): JSX.Element {
         <div className="game-over-overlay">
           <div className="game-over-panel">
             <Leaderboard
-              players={allPlayers.filter((p) => p.finishTime)}
+              players={allPlayers}
               title="Kết quả trận đấu"
               myUID={gameRef.current?.getMyPlayerId()}
+              variant="result"
             />
             <div className="game-over-actions">
-              <button
-                type="button"
-                className="menu-btn btn-play"
-                onClick={() => window.location.reload()}
-              >
-                Chơi lại
-              </button>
               <button
                 type="button"
                 className="menu-btn btn-rule"
