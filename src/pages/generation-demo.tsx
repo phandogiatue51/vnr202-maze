@@ -4,7 +4,6 @@ import Button from '../components/button';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
 import LabelInput from '../components/label-input';
-import Nav from '../components/nav';
 import CanvasManager, { getOnUpdate } from '../lib/canvas-manager';
 import { generateMaze, getRandomSeed } from '../lib/maze-generator';
 
@@ -46,7 +45,6 @@ function GenerationDemo(): JSX.Element {
 
   return (
     <Container>
-      <Nav />
       <h1 className="text-4xl">Generation Demo</h1>
       <Canvas ref={canvasRef} size={canvasSize} />
       <div className="flex flex-wrap gap-3 items-center place-content-center">

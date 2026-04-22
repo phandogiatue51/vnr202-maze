@@ -460,7 +460,7 @@ export default class MultiplayerGame {
     const size = MAZE_SIZE;
     this.golds = generateGold(size, seed);
 
-    this.game = new Game(this.canvas, 10, seed, this.myUID, (gold) => {
+    this.game = new Game(this.canvas, size, seed, this.myUID, (gold) => {
       if (this.onGoldHit && !gold.collectedBy) {
         this.onGoldHit(gold);
       }

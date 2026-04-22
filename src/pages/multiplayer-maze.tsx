@@ -6,7 +6,6 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import Canvas from '../components/canvas';
 import Container from '../components/container';
-import Nav from '../components/nav';
 import QuestionModal from '../components/question-modal';
 import Leaderboard from '../components/leaderboard';
 import { FIREBASE_CONFIG, IDLE_CONTROL, TOAST_CONFIG } from '../constants';
@@ -147,7 +146,6 @@ function MultiplayerMaze(): JSX.Element {
 
   return (
     <>
-      <Nav />
       <div className="timer-overlay">
         <span className="timer-label">Thời gian còn lại:</span>
         <span className="timer-value">{formatTime(timeLeft)}</span>
