@@ -1,60 +1,131 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
 import './home-page.css';
+
+const RULE_SECTIONS = [
+  {
+    title: 'Mục tiêu',
+    points: [
+      'Thu thập càng nhiều tài liệu càng tốt trong mê cung.',
+      'Muốn chốt chiến thắng, bạn cần về đích sau khi đã có ít nhất 1 tài liệu.',
+      'Nếu hết giờ, người có nhiều tài liệu hơn sẽ xếp trên.'
+    ]
+  },
+  {
+    title: 'Di chuyển',
+    points: [
+      'Dùng phím mũi tên hoặc WASD để điều khiển nhân vật.',
+      'Bạn không thể đi xuyên tường, hệ thống sẽ tự chặn các bước đi không hợp lệ.',
+      'Hãy quan sát và ghi nhớ đường đi vì bạn chỉ thấy vùng xung quanh mình.'
+    ]
+  },
+  {
+    title: 'Thu thập tài liệu',
+    points: [
+      'Khi chạm vào một tài liệu, câu hỏi trắc nghiệm sẽ hiện ra.',
+      'Trả lời đúng để nhận tài liệu và tăng điểm.',
+      'Mỗi tài liệu chỉ được tính cho người trả lời đúng đầu tiên.'
+    ]
+  },
+  {
+    title: 'Câu hỏi',
+    points: [
+      'Mỗi tài liệu đi kèm một câu hỏi 4 lựa chọn A, B, C, D.',
+      'Trong lúc trả lời, bạn sẽ tạm dừng di chuyển.',
+      'Nếu người khác trả lời đúng trước, tài liệu đó sẽ biến mất với tất cả mọi người.'
+    ]
+  },
+  {
+    title: 'Về đích và xếp hạng',
+    points: [
+      'Sau khi có tài liệu, hãy tìm đường về ô đích để chốt kết quả.',
+      'Bảng xếp hạng hiển thị số tài liệu và trạng thái của từng người chơi theo thời gian thực.',
+      'Nếu bằng điểm, người về đích sớm hơn sẽ có lợi thế hơn.'
+    ]
+  },
+  {
+    title: 'Thời gian trận đấu',
+    points: [
+      'Mỗi trận kéo dài 10 phút.',
+      'Khi đồng hồ về 0, trận đấu kết thúc ngay.',
+      'Lúc đó hệ thống sẽ hiện bảng kết quả cuối cùng.'
+    ]
+  }
+];
+
+const QUICK_TIPS = [
+  'Ưu tiên nhặt tài liệu gần bạn trước để không bỏ lỡ cơ hội.',
+  'Nếu mê cung đông người, đừng đứng quá lâu ở một câu hỏi khó.',
+  'Sau khi có tài liệu đầu tiên, hãy bắt đầu nhớ đường về đích.'
+];
 
 const RulesPage: React.FC = () => {
   const history = useHistory();
 
   return (
-    <Container className="home-container" style={{ textAlign: 'left' }}>
-      <div
-        className="rules-content p-4"
-        style={{
-          background: '#1e293b',
-          borderRadius: '20px',
-          border: '2px solid #fbbf24',
-          maxWidth: '800px'
-        }}
-      >
-        <h1 className="game-title text-center" style={{ fontSize: '3rem' }}>
-          Luật Chơi
-        </h1>
+    <div className="home-container rules-page-shell">
+      <div className="rules-page-layout">
+        <section className="rules-hero-panel">
+          <span className="lobby-eyebrow">Hướng dẫn chơi</span>
+          <h1 className="rules-page-title">Luật Chơi</h1>
+          <p className="rules-page-lead">
+            Đây là cuộc đua mê cung nhiều người chơi. Bạn cần vừa nhanh, vừa chính xác để thu
+            thập tài liệu và về đích đúng lúc.
+          </p>
 
-        <h3>1. Mục tiêu</h3>
-        <p>
-          Người chơi đầu tiên thu thập được nhiều vàng nhất VÀ về đích thành công sẽ giành chiến
-          thắng.
-        </p>
+          <div className="rules-highlight-grid">
+            <div className="rules-highlight-card">
+              <span className="rules-highlight-label">Thời gian</span>
+              <strong className="rules-highlight-value">10 phút</strong>
+            </div>
+            <div className="rules-highlight-card">
+              <span className="rules-highlight-label">Điều khiển</span>
+              <strong className="rules-highlight-value">WASD / Mũi tên</strong>
+            </div>
+            <div className="rules-highlight-card">
+              <span className="rules-highlight-label">Điều kiện thắng</span>
+              <strong className="rules-highlight-value">Nhiều tài liệu + về đích</strong>
+            </div>
+          </div>
+        </section>
 
-        <h3>2. Di chuyển</h3>
-        <p>
-          Sử dụng các phím mũi tên (↑ ↓ ← →) hoặc phím WASD (W A S D) để di chuyển nhân vật trong mê
-          cung. Bạn không thể đi xuyên tường.
-        </p>
+        <section className="rules-main-panel">
+          <div className="rules-section-list">
+            {RULE_SECTIONS.map((section, index) => (
+              <article key={section.title} className="rules-section-card">
+                <div className="rules-section-number">{index + 1}</div>
+                <div className="rules-section-body">
+                  <h2 className="rules-section-title">{section.title}</h2>
+                  <ul className="rules-points">
+                    {section.points.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              </article>
+            ))}
+          </div>
 
-        <h3>3. Thu thập vàng</h3>
-        <p>
-          Có 50 cục vàng được đặt cố định. Đứng vào ô có vàng để trả lời câu hỏi trắc nghiệm. Trả
-          lời đúng để nhận vàng.
-        </p>
+          <div className="rules-tips-panel">
+            <h3 className="rules-tips-title">Mẹo chơi nhanh</h3>
+            <ul className="rules-points compact">
+              {QUICK_TIPS.map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
+            </ul>
+          </div>
 
-        <h3>4. Về đích</h3>
-        <p>
-          Bạn phải về đích sau khi đã thu thập được ít nhất 1 cục vàng. Trạng thái về đích sẽ được
-          ghi nhận trên bảng xếp hạng.
-        </p>
-
-        <h3>5. Thời gian</h3>
-        <p>Mỗi ván đấu kéo dài 10 phút. Hết giờ, ai nhiều vàng nhất sẽ giành chiến thắng.</p>
-
-        <div className="text-center mt-5">
-          <button type="button" className="menu-btn btn-play" onClick={() => history.push('/')}>
-            Quay lại Menu
-          </button>
-        </div>
+          <div className="rules-actions">
+            <button type="button" className="menu-btn btn-play" onClick={() => history.push('/start')}>
+              Vào trò chơi
+            </button>
+            <button type="button" className="menu-btn btn-rule" onClick={() => history.push('/')}>
+              Quay lại menu
+            </button>
+          </div>
+        </section>
       </div>
-    </Container>
+    </div>
   );
 };
 

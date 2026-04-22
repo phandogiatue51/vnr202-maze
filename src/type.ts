@@ -21,6 +21,7 @@ export type Player = {
   location: Cord;
   goldCount?: number;
   finishTime?: number;
+  reachedGoal?: boolean;
   joinedAt?: number;
   startTime?: number;
 };

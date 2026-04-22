@@ -20,7 +20,7 @@ const position: ToastPosition = 'top-right';
 
 export const TOAST_CONFIG = {
   position,
-  autoClose: 5000,
+  autoClose: 3000,
   hideProgressBar: true,
   closeOnClick: true,
   pauseOnHover: true,

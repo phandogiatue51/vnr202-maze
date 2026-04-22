@@ -7,6 +7,7 @@ import Game from './game';
 import { generateGold } from './gold-logic';
 
 const REFRESH_THRESHOLD = 3;
+const ROUND_DURATION_SECONDS = 600;
 
 type Auth = firebase.auth.Auth;
 type Firestore = firebase.firestore.Firestore;
@@ -53,6 +54,8 @@ export default class MultiplayerGame {
 
   private onGoldHit?: (gold: Gold) => void;
 
+  private onGoldCollected?: (goldId: string, collectedBy: string) => void;
+
   private onTimerUpdate?: (secondsLeft: number) => void;
 
   private onStatusUpdate?: (status: 'waiting' | 'started') => void;
@@ -63,7 +66,7 @@ export default class MultiplayerGame {
 
   private timerInterval?: NodeJS.Timeout;
 
-  private secondsLeft = 300;
+  private secondsLeft = ROUND_DURATION_SECONDS;
 
   private startTime?: number;
 
@@ -72,6 +75,7 @@ export default class MultiplayerGame {
     onGameOver?: CallBack,
     callBack?: CallBack,
     onGoldHit?: (gold: Gold) => void,
+    onGoldCollected?: (goldId: string, collectedBy: string) => void,
     onTimerUpdate?: (secondsLeft: number) => void,
     onStatusUpdate?: (status: 'waiting' | 'started') => void,
     onPlayersUpdate?: (players: Player[]) => void
@@ -82,6 +86,7 @@ export default class MultiplayerGame {
     this.onGameOver = onGameOver;
     this.callBack = callBack;
     this.onGoldHit = onGoldHit;
+    this.onGoldCollected = onGoldCollected;
     this.onTimerUpdate = onTimerUpdate;
     this.onStatusUpdate = onStatusUpdate;
     this.onPlayersUpdate = onPlayersUpdate;
@@ -97,7 +102,7 @@ export default class MultiplayerGame {
         this.callBack(false, message);
       }
       this.initNewGame(12345);
-      this.startLocalTimer(Date.now() + 300 * 1000);
+      this.startLocalTimer(Date.now() + ROUND_DURATION_SECONDS * 1000);
       console.error('Multiplayer initialization failed:', error);
     }
   }
@@ -114,7 +119,8 @@ export default class MultiplayerGame {
       this.isWinner = true;
       if (this.myUID) {
         this.getPlayersRef().doc(this.myUID).update({
-          finishTime: Date.now()
+          finishTime: Date.now(),
+          reachedGoal: true
         });
       }
       if (this.onGameOver) this.onGameOver(true);
@@ -158,17 +164,18 @@ export default class MultiplayerGame {
     if (!this.isFirebaseReady || !this.myUID) return;
     const now = Date.now();
     this.startTime = now;
-    this.secondsLeft = 300;
+    this.secondsLeft = ROUND_DURATION_SECONDS;
 
     await this.getPlayersRef().doc(this.myUID).update({
       startTime: now,
       finishTime: null,
+      reachedGoal: false,
       goldCount: 0,
       r: 0.5,
       c: 0.5
     });
 
-    this.startLocalTimer(now + 300 * 1000);
+    this.startLocalTimer(now + ROUND_DURATION_SECONDS * 1000);
     this.initNewGame(12345);
   };
 
@@ -335,17 +342,19 @@ export default class MultiplayerGame {
           name,
           ...location,
           goldCount: 0,
+          reachedGoal: false,
           joinedAt: now,
           startTime: now,
           finishTime: null
         });
-        this.startLocalTimer(now + 300 * 1000);
+        this.startLocalTimer(now + ROUND_DURATION_SECONDS * 1000);
       } else {
         const data = doc.data();
         const previousStartTime = data?.startTime;
         const isPreviousGameFinished = data?.finishTime !== null && data?.finishTime !== undefined;
         const isTimeExpired =
-          typeof previousStartTime === 'number' && now - previousStartTime >= 300 * 1000;
+          typeof previousStartTime === 'number' &&
+          now - previousStartTime >= ROUND_DURATION_SECONDS * 1000;
 
         if (isPreviousGameFinished || isTimeExpired || !previousStartTime) {
           this.startTime = now;
@@ -354,6 +363,7 @@ export default class MultiplayerGame {
             ...location,
             startTime: now,
             finishTime: null,
+            reachedGoal: false,
             goldCount: 0
           });
         } else {
@@ -363,7 +373,7 @@ export default class MultiplayerGame {
             ...location
           });
         }
-        this.startLocalTimer((this.startTime || now) + 300 * 1000);
+        this.startLocalTimer((this.startTime || now) + ROUND_DURATION_SECONDS * 1000);
       }
       this.initNewGame(12345);
       this.addGoldsListener();
@@ -385,10 +395,17 @@ export default class MultiplayerGame {
         goldOwners.set(doc.id, data?.collectedBy || null);
       });
 
-      this.golds = this.golds.map((gold) => ({
-        ...gold,
-        collectedBy: goldOwners.get(gold.id) || null
-      }));
+      this.golds = this.golds.map((gold) => {
+        const nextCollectedBy = goldOwners.get(gold.id) || null;
+        if (!gold.collectedBy && nextCollectedBy && this.onGoldCollected) {
+          this.onGoldCollected(gold.id, nextCollectedBy);
+        }
+
+        return {
+          ...gold,
+          collectedBy: nextCollectedBy
+        };
+      });
 
       if (this.game) {
         this.game.setGoldItems(this.golds);
@@ -412,6 +429,7 @@ export default class MultiplayerGame {
           name: p.name,
           goldCount: p.goldCount || 0,
           finishTime: p.finishTime,
+          reachedGoal: Boolean(p.reachedGoal),
           joinedAt: p.joinedAt,
           startTime: p.startTime
         };
@@ -487,11 +505,6 @@ export default class MultiplayerGame {
         if (this.timerInterval) clearInterval(this.timerInterval);
 
         if (!this.isWinner) {
-          if (this.myUID) {
-            await this.getPlayersRef().doc(this.myUID).update({
-              finishTime: Date.now()
-            });
-          }
           if (this.onGameOver) this.onGameOver(false);
         }
       }
