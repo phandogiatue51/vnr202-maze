@@ -9,15 +9,17 @@ interface LeaderboardProps {
   myUID?: string;
 }
 
-const Leaderboard: React.FC<LeaderboardProps> = ({ players, title = 'Live Rankings', myUID }) => {
-  // Sort players: 1. Gold Count (Desc), 2. Finish Time (Asc, if exists)
+const Leaderboard: React.FC<LeaderboardProps> = ({
+  players,
+  title = 'Bảng xếp hạng trực tiếp',
+  myUID
+}) => {
   const sortedPlayers = useMemo(() => {
     return [...players].sort((a, b) => {
       const goldA = a.goldCount || 0;
       const goldB = b.goldCount || 0;
       if (goldB !== goldA) return goldB - goldA;
 
-      // Tie breaker: finish time (smaller is better)
       if (a.finishTime && b.finishTime) return a.finishTime - b.finishTime;
       if (a.finishTime) return -1;
       if (b.finishTime) return 1;
@@ -32,43 +34,45 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ players, title = 'Live Rankin
       <table className="leaderboard-table">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>Gold</th>
-            <th>Status</th>
+            <th>Hạng</th>
+            <th>Người chơi</th>
+            <th>Tài liệu</th>
+            <th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           {sortedPlayers.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-4 text-white-50">
-                <i>Waiting for players to join...</i>
+                <i>Đợi người chơi tham gia...</i>
               </td>
             </tr>
-          ) : sortedPlayers.map((player, index) => {
-            const isMe = player.id === myUID;
-            return (
-              <tr key={player.id} className={isMe ? 'row-me' : ''}>
-                <td>
-                  <span className={`rank-badge rank-${index + 1}`}>{index + 1}</span>
-                </td>
+          ) : (
+            sortedPlayers.map((player, index) => {
+              const isMe = player.id === myUID;
+              return (
+                <tr key={player.id} className={isMe ? 'row-me' : ''}>
+                  <td>
+                    <span className={`rank-badge rank-${index + 1}`}>{index + 1}</span>
+                  </td>
 
-                <td className="player-id-cell">
-                  {isMe ? 'You' : (player.name || `Player ${player.id.substring(0, 4)}`)}
-                </td>
-                <td className="gold-cell">
-                  <span className="gold-text">{player.goldCount || 0}</span>
-                </td>
-                <td className="status-cell">
-                  {player.finishTime ? (
-                    <span className="status-finished">Finished!</span>
-                  ) : (
-                    <span className="status-racing">Racing...</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
+                  <td className="player-id-cell">
+                    {isMe ? player.name : player.name || `Người chơi ${player.id.substring(0, 4)}`}
+                  </td>
+                  <td className="gold-cell">
+                    <span className="gold-text">{player.goldCount || 0}</span>
+                  </td>
+                  <td className="status-cell">
+                    {player.finishTime ? (
+                      <span className="status-finished">Hoàn thành!</span>
+                    ) : (
+                      <span className="status-racing">Đang thi đấu...</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>

@@ -22,19 +22,15 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ gold, onAnswer, onClose }
     setIsRevealing(true);
 
     const isCorrect = choiceKey === question.answer;
-    
-    // Give 2 seconds to show the answer status
+
     setTimeout(() => {
       setFeedback(isCorrect ? 'correct' : 'incorrect');
-      
+
       if (isCorrect) {
-        // After 2 seconds of showing it's correct, finish
         setTimeout(() => {
           onAnswer(true);
         }, 1000);
       } else {
-        // If incorrect, wait for 5 seconds (including the reveal time)
-        // User said "wait for 5 seconds", I'll wait 3 more seconds here (total 5 since start)
         setTimeout(() => {
           onAnswer(false);
         }, 3000);
@@ -47,23 +43,27 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ gold, onAnswer, onClose }
       <div className="question-card">
         <div className="gold-icon-header">
           <span className="header-icon">✨</span>
-          <span className="header-text">Gold Challenge!</span>
+          <span className="header-text">Thử thách tài liệu</span>
         </div>
 
         <h2 className="question-text">{question.text}</h2>
 
         <div className="options-grid">
           {question.options.map((option, index) => {
-            const key = String.fromCharCode(65 + index); // A, B, C, D
+            const key = String.fromCharCode(65 + index);
             const isSelected = selectedChoice === key;
             const isCorrect = key === question.answer;
-            
+
             let statusClass = '';
             if (isRevealing) {
               if (isSelected) {
-                statusClass = feedback === 'correct' ? 'option-correct' : (feedback === 'incorrect' ? 'option-incorrect' : 'option-selected');
+                statusClass =
+                  feedback === 'correct'
+                    ? 'option-correct'
+                    : feedback === 'incorrect'
+                      ? 'option-incorrect'
+                      : 'option-selected';
               } else if (feedback === 'incorrect' && isCorrect) {
-                // Show correct answer if they were wrong
                 statusClass = 'option-correct-revealed';
               }
             }
@@ -84,7 +84,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ gold, onAnswer, onClose }
         </div>
 
         <button type="button" className="close-btn" onClick={onClose}>
-          Skip for now
+          Bỏ qua lúc này
         </button>
       </div>
     </div>

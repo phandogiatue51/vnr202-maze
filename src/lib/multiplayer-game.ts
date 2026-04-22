@@ -10,9 +10,7 @@ const REFRESH_THRESHOLD = 3;
 
 type Auth = firebase.auth.Auth;
 type Firestore = firebase.firestore.Firestore;
-type DocumentReference = firebase.firestore.DocumentReference;
-type DocumentSnapshot = firebase.firestore.DocumentSnapshot;
-type QuerySnapshot = firebase.firestore.QuerySnapshot;
+type CollectionReference = firebase.firestore.CollectionReference;
 
 export default class MultiplayerGame {
   private isWinner: boolean;
@@ -32,13 +30,22 @@ export default class MultiplayerGame {
   private golds: Gold[] = [];
 
   private players: Map<string, Player> = new Map();
+
   private isEntered = false;
+
   private playerName?: string;
+
   private game!: Game;
 
   private canvas: CanvasOrNull;
 
   private firestore!: Firestore;
+
+  private roomCode = '';
+
+  private playersRef?: CollectionReference;
+
+  private goldsRef?: CollectionReference;
 
   private onGameOver?: CallBack;
 
@@ -51,10 +58,13 @@ export default class MultiplayerGame {
   private onStatusUpdate?: (status: 'waiting' | 'started') => void;
 
   private onPlayersUpdate?: (players: Player[]) => void;
+
   private isFirebaseReady = false;
 
   private timerInterval?: NodeJS.Timeout;
-  private secondsLeft = 300; // 5 minutes default
+
+  private secondsLeft = 300;
+
   private startTime?: number;
 
   constructor(
@@ -86,7 +96,6 @@ export default class MultiplayerGame {
       if (this.callBack) {
         this.callBack(false, message);
       }
-      // Fallback so the game screen still renders even when Firebase is not configured.
       this.initNewGame(12345);
       this.startLocalTimer(Date.now() + 300 * 1000);
       console.error('Multiplayer initialization failed:', error);
@@ -104,7 +113,7 @@ export default class MultiplayerGame {
     if (this.game.checkWin() && !this.isWinner) {
       this.isWinner = true;
       if (this.myUID) {
-        this.firestore.collection('players').doc(this.myUID).update({
+        this.getPlayersRef().doc(this.myUID).update({
           finishTime: Date.now()
         });
       }
@@ -149,9 +158,9 @@ export default class MultiplayerGame {
     if (!this.isFirebaseReady || !this.myUID) return;
     const now = Date.now();
     this.startTime = now;
-    this.secondsLeft = 300; // 5 minutes
+    this.secondsLeft = 300;
 
-    await this.firestore.collection('players').doc(this.myUID).update({
+    await this.getPlayersRef().doc(this.myUID).update({
       startTime: now,
       finishTime: null,
       goldCount: 0,
@@ -160,12 +169,12 @@ export default class MultiplayerGame {
     });
 
     this.startLocalTimer(now + 300 * 1000);
-    this.initNewGame(12345); // Or a random seed
+    this.initNewGame(12345);
   };
 
   public purgePlayers = async (): Promise<void> => {
     if (!this.isFirebaseReady) return;
-    const snapshot = await this.firestore.collection('players').get();
+    const snapshot = await this.getPlayersRef().get();
     const batch = this.firestore.batch();
     snapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
@@ -182,8 +191,8 @@ export default class MultiplayerGame {
       return true;
     }
 
-    const playerRef = this.firestore.collection('players').doc(this.myUID);
-    const goldRef = this.firestore.collection('golds').doc(gold.id);
+    const playerRef = this.getPlayersRef().doc(this.myUID);
+    const goldRef = this.getGoldsRef().doc(gold.id);
 
     const collected = await this.firestore.runTransaction(async (transaction) => {
       const goldDoc = await transaction.get(goldRef);
@@ -261,20 +270,41 @@ export default class MultiplayerGame {
     }
     const app = firebase.app();
     this.firestore = app.firestore();
+    this.roomCode = localStorage.getItem('roomCode') || '';
+    if (!this.roomCode) {
+      throw new Error('Room code is missing. Please rejoin the lobby.');
+    }
+    const roomRef = this.firestore.collection('rooms').doc(this.roomCode);
+    this.playersRef = roomRef.collection('players');
+    this.goldsRef = roomRef.collection('golds');
     const auth = app.auth();
     this.signInAndInitListener(auth);
+  };
+
+  private getPlayersRef = (): CollectionReference => {
+    if (!this.playersRef) {
+      throw new Error('Players collection is not initialized.');
+    }
+    return this.playersRef;
+  };
+
+  private getGoldsRef = (): CollectionReference => {
+    if (!this.goldsRef) {
+      throw new Error('Golds collection is not initialized.');
+    }
+    return this.goldsRef;
   };
 
   private signInAndInitListener = (auth: Auth) => {
     auth.signInAnonymously().catch((error) => {
       console.error('Firebase Auth Error:', error);
       if (this.callBack) {
-        this.callBack(false, `Login failed: ${error.message || 'Unknown error'}`);
+        this.callBack(false, `Đăng nhập thất bại: ${error.message || 'Lỗi không xác định'}`);
       }
     });
     auth.onAuthStateChanged((user) => {
       if (user) {
-        if (this.callBack) this.callBack(true, `Login Success.`);
+        if (this.callBack) this.callBack(true, 'Đăng nhập thành công.');
         this.myUID = user.uid;
         if (this.isEntered) this.syncPlayer();
         this.addPlayersListener();
@@ -291,7 +321,7 @@ export default class MultiplayerGame {
     const name = this.playerName || localStorage.getItem('playerName') || 'Anonymous';
     if (!this.myUID) return;
 
-    const playerRef = this.firestore.collection('players').doc(this.myUID);
+    const playerRef = this.getPlayersRef().doc(this.myUID);
     const myPlayer = this.game?.getMyPlayer();
     const location = myPlayer?.location || { r: 0.5, c: 0.5 };
 
@@ -312,11 +342,27 @@ export default class MultiplayerGame {
         this.startLocalTimer(now + 300 * 1000);
       } else {
         const data = doc.data();
-        this.startTime = data?.startTime || now;
-        await playerRef.update({
-          name,
-          ...location
-        });
+        const previousStartTime = data?.startTime;
+        const isPreviousGameFinished = data?.finishTime !== null && data?.finishTime !== undefined;
+        const isTimeExpired =
+          typeof previousStartTime === 'number' && now - previousStartTime >= 300 * 1000;
+
+        if (isPreviousGameFinished || isTimeExpired || !previousStartTime) {
+          this.startTime = now;
+          await playerRef.update({
+            name,
+            ...location,
+            startTime: now,
+            finishTime: null,
+            goldCount: 0
+          });
+        } else {
+          this.startTime = previousStartTime;
+          await playerRef.update({
+            name,
+            ...location
+          });
+        }
         this.startLocalTimer((this.startTime || now) + 300 * 1000);
       }
       this.initNewGame(12345);
@@ -332,7 +378,7 @@ export default class MultiplayerGame {
       this.unsubscribeGolds();
     }
 
-    this.unsubscribeGolds = this.firestore.collection('golds').onSnapshot((snapshot) => {
+    this.unsubscribeGolds = this.getGoldsRef().onSnapshot((snapshot) => {
       const goldOwners = new Map<string, string | null>();
       snapshot.forEach((doc) => {
         const data = doc.data();
@@ -352,12 +398,12 @@ export default class MultiplayerGame {
 
   private addPlayersListener = (): void => {
     if (!this.isFirebaseReady) return;
-    this.unsubscribePlayers = this.firestore.collection('players').onSnapshot((snapshot) => {
+    this.unsubscribePlayers = this.getPlayersRef().onSnapshot((snapshot) => {
       this.players.clear();
       this.opPositions.clear();
 
       snapshot.forEach((doc) => {
-        const id = doc.id;
+        const { id } = doc;
         const p = doc.data();
 
         const player: Player = {
@@ -387,17 +433,15 @@ export default class MultiplayerGame {
     });
   };
 
-  // registerPlayer is now merged into syncPlayer
-
   public removePlayerExplicitly = async (): Promise<void> => {
     if (this.isFirebaseReady && this.myUID) {
-      await this.firestore.collection('players').doc(this.myUID).delete();
+      await this.getPlayersRef().doc(this.myUID).delete();
     }
   };
 
   private removePlayer = async (player: Player): Promise<void> => {
     if (!this.isFirebaseReady) return;
-    await this.firestore.collection('players').doc(player.id).delete();
+    await this.getPlayersRef().doc(player.id).delete();
   };
 
   private updateMyLocation = (): void => {
@@ -407,7 +451,7 @@ export default class MultiplayerGame {
     const newPos = myPlayer.location;
     const oldPos = this.lastUpdatedPosition;
     if (!oldPos || newPos.c !== oldPos.c || newPos.r !== oldPos.r) {
-      this.firestore.collection('players').doc(this.myUID).update(newPos);
+      this.getPlayersRef().doc(this.myUID).update(newPos);
       this.lastUpdatedPosition = newPos;
     }
   };
@@ -443,9 +487,8 @@ export default class MultiplayerGame {
         if (this.timerInterval) clearInterval(this.timerInterval);
 
         if (!this.isWinner) {
-          // Set finishTime to now if they didn't win but time ran out
           if (this.myUID) {
-            await this.firestore.collection('players').doc(this.myUID).update({
+            await this.getPlayersRef().doc(this.myUID).update({
               finishTime: Date.now()
             });
           }
