@@ -4,9 +4,9 @@ import { Control, Cord, Direction, Link, StringMap } from './type';
 const LINKS: Array<Link> = [
   // { name: 'Home', url: 'https://shuby-mao.web.app/' },
   // { name: 'Project Page', url: 'https://shuby-mao.web.app/projects/web-multiplayer-maze' },
-  { name: 'Multiplayer Maze', url: '/' },
-  { name: 'Offline Maze', url: '/offline' },
-  { name: 'Generation Demo', url: '/generation-demo' }
+  // { name: 'Multiplayer Maze', url: '/' },
+  // { name: 'Offline Maze', url: '/offline' },
+  // { name: 'Generation Demo', url: '/generation-demo' }
 ];
 
 export const FIREBASE_CONFIG = {
