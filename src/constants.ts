@@ -2,21 +2,26 @@ import { ToastPosition } from 'react-toastify';
 import { Control, Cord, Direction, Link, StringMap } from './type';
 
 const LINKS: Array<Link> = [
-  { name: 'Home', url: 'https://shuby-mao.web.app/' },
-  { name: 'Project Page', url: 'https://shuby-mao.web.app/projects/web-multiplayer-maze' },
+  // { name: 'Home', url: 'https://shuby-mao.web.app/' },
+  // { name: 'Project Page', url: 'https://shuby-mao.web.app/projects/web-multiplayer-maze' },
   { name: 'Multiplayer Maze', url: '/' },
   { name: 'Offline Maze', url: '/offline' },
   { name: 'Generation Demo', url: '/generation-demo' }
 ];
 
 export const FIREBASE_CONFIG = {
-  apiKey: process.env.REACT_APP_firebase_apiKey,
-  authDomain: process.env.REACT_APP_firebase_authDomain,
-  databaseURL: process.env.REACT_APP_firebase_databaseURL,
-  projectId: process.env.REACT_APP_firebase_projectId,
-  storageBucket: process.env.REACT_APP_firebase_storageBucket,
-  messagingSenderId: process.env.REACT_APP_firebase_messagingSenderId,
-  appId: process.env.REACT_APP_firebase_appId
+  apiKey: process.env.REACT_APP_firebase_apiKey || process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain:
+    process.env.REACT_APP_firebase_authDomain || process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  databaseURL:
+    process.env.REACT_APP_firebase_databaseURL || process.env.REACT_APP_FIREBASE_DATABASE_URL,
+  projectId: process.env.REACT_APP_firebase_projectId || process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket:
+    process.env.REACT_APP_firebase_storageBucket || process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId:
+    process.env.REACT_APP_firebase_messagingSenderId ||
+    process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_firebase_appId || process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 const position: ToastPosition = 'top-right';

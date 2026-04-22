@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from 'react-bootstrap';
 import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
 import Canvas from '../components/canvas';
@@ -57,6 +56,7 @@ function MultiplayerMaze(): JSX.Element {
 
   const hitGoldRef = useRef<Gold | null>(null);
   const [isFinished, setIsFinished] = useState(false);
+  const [collectedCount, setCollectedCount] = useState(0);
 
   const animate: FrameRequestCallback = useCallback(() => {
     // Freeze movement if question modal is open
@@ -64,6 +64,7 @@ function MultiplayerMaze(): JSX.Element {
       gameRef.current?.performMove(control.current);
     }
     gameRef.current?.render();
+    gameRef.current?.renderMinimap();
     animationRef.current = requestAnimationFrame(animate);
   }, []);
 
@@ -131,10 +132,14 @@ function MultiplayerMaze(): JSX.Element {
   return (
     <>
       <Nav />
-      {/* Global Timer Overlay */}
+      {/* Global Timer and Collected Count Overlay */}
       <div className="timer-overlay">
         <span className="timer-label">Time Left:</span>
         <span className="timer-value">{formatTime(timeLeft)}</span>
+      </div>
+      <div className="timer-overlay" style={{ right: '20px', left: 'auto' }}>
+        <span className="timer-label">Tài liệu:</span>
+        <span className="timer-value">{collectedCount}</span>
       </div>
 
       <div className="game-layout">
@@ -159,10 +164,15 @@ function MultiplayerMaze(): JSX.Element {
             hitGoldRef.current = null;
             setHitGold(null);
           }}
-          onAnswer={(correct) => {
+          onAnswer={async (correct) => {
             if (correct) {
-              gameRef.current?.collectGold(hitGold);
-              toast.success('Correct! Gold collected 💰', TOAST_CONFIG);
+              const collected = await gameRef.current?.collectGold(hitGold);
+              if (collected) {
+                setCollectedCount((prev) => prev + 1);
+                toast.success('Correct! Gold collected 💰', TOAST_CONFIG);
+              } else {
+                toast.info('Gold này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
+              }
             } else {
               toast.error('Wrong answer! Try again later.', TOAST_CONFIG);
             }
@@ -179,13 +189,20 @@ function MultiplayerMaze(): JSX.Element {
             title="Match Results"
             myUID={gameRef.current?.getMyPlayerId()}
           />
-          <div className="mt-4 d-grid gap-2">
-            <Button variant="warning" onClick={() => window.location.reload()}>
+          <div className="mt-4" style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <button type="button" className="menu-btn btn-play" onClick={() => window.location.reload()}>
               Chơi lại
-            </Button>
-            <Button variant="outline-light" onClick={() => { localStorage.removeItem('playerName'); window.location.href = '#/'; }}>
+            </button>
+            <button
+              type="button"
+              className="menu-btn btn-rule"
+              onClick={() => {
+                localStorage.removeItem('playerName');
+                window.location.href = '#/';
+              }}
+            >
               Thoát ra Menu
-            </Button>
+            </button>
           </div>
         </div>
       )}

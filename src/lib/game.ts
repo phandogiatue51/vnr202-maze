@@ -32,6 +32,8 @@ export default class Game {
 
   private onGoldHit?: (gold: Gold) => void;
 
+  private activeGoldCollisionId?: string;
+
   constructor(
     canvas: CanvasOrNull,
     level: number,
@@ -55,6 +57,14 @@ export default class Game {
 
   public getMyPlayer = (): Player => {
     return this.player;
+  };
+
+  public getGoldItems = (): Gold[] => {
+    return this.goldItems;
+  };
+
+  public getCanvasManager = (): CanvasManager => {
+    return this.canvasManager;
   };
 
   public getSeed = (): number | undefined => {
@@ -86,7 +96,14 @@ export default class Game {
     this.player.location = this.getBoundedCord(nr, nc);
 
     const hitGold = checkGoldCollision(this.player.location, this.goldItems, MARGIN);
-    if (hitGold && this.onGoldHit) {
+    if (!hitGold) {
+      this.activeGoldCollisionId = undefined;
+      return;
+    }
+
+    // Trigger gold question only once per continuous collision.
+    if (hitGold.id !== this.activeGoldCollisionId && this.onGoldHit) {
+      this.activeGoldCollisionId = hitGold.id;
       this.onGoldHit(hitGold);
     }
   };

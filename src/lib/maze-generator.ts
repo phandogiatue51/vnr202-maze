@@ -1,11 +1,12 @@
 import { Cell, Cord, OnUpdate, Config, Direction } from '../type';
-import { ALL_DIRS_CELL, getDirCordOffset, getOPDir, removeDir } from './direction-util';
+import { ALL_DIRS_CELL, getDirCordOffset, getOPDir, hasDirection, removeDir } from './direction-util';
 
 export const START_CORD = { r: 0, c: 0 };
 
 let globalSeed: number = Math.random() * 1e9;
 let maze: Cell[][];
 let seen: boolean[][];
+const EXTRA_CONNECTION_RATE = 0.08;
 
 export function isValidGrid(grid?: Cell[][]): boolean {
   if (!grid) return false;
@@ -109,12 +110,55 @@ function depthFirstSearchSync(cord: Cord): void {
   }
 }
 
+function countOpenings(cell: Cell): number {
+  let openings = 0;
+  if (!hasDirection(cell, Direction.TOP)) openings++;
+  if (!hasDirection(cell, Direction.RIGHT)) openings++;
+  if (!hasDirection(cell, Direction.DOWN)) openings++;
+  if (!hasDirection(cell, Direction.LEFT)) openings++;
+  return openings;
+}
+
+function ensureStartBranch(grid: Cell[][]): void {
+  const start = START_CORD;
+  if (countOpenings(grid[start.r][start.c]) >= 2) return;
+
+  const candidates = [Direction.RIGHT, Direction.DOWN];
+  for (const dir of candidates) {
+    if (!hasDirection(grid[start.r][start.c], dir)) continue;
+    const next = getNextCord(start, dir);
+    if (isOutOfBound(grid, next)) continue;
+    breakWall(grid, start, dir);
+    breakWall(grid, next, getOPDir(dir));
+    break;
+  }
+}
+
+function carveExtraConnections(grid: Cell[][]): void {
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
+      const cord = { r, c };
+      const dirs = [Direction.RIGHT, Direction.DOWN];
+      for (const dir of dirs) {
+        if (rand() >= EXTRA_CONNECTION_RATE) continue;
+        if (!hasDirection(grid[r][c], dir)) continue;
+        const next = getNextCord(cord, dir);
+        if (isOutOfBound(grid, next)) continue;
+        breakWall(grid, cord, dir);
+        breakWall(grid, next, getOPDir(dir));
+      }
+    }
+  }
+}
+
 export async function generateMaze(size: number, params: Config = {}): Promise<Cell[][]> {
   const { userSeed, onUpdate } = params;
   maze = create2DArray<Cell>(size, ALL_DIRS_CELL);
   seen = create2DArray<boolean>(size, false);
   setSeed(userSeed);
   await depthFirstSearch(START_CORD, onUpdate);
+  carveExtraConnections(maze);
+  ensureStartBranch(maze);
   return maze;
 }
 
@@ -123,5 +167,7 @@ export function generateMazeSync(size: number, userSeed?: number): Cell[][] {
   seen = create2DArray<boolean>(size, false);
   setSeed(userSeed);
   depthFirstSearchSync(START_CORD);
+  carveExtraConnections(maze);
+  ensureStartBranch(maze);
   return maze;
 }
