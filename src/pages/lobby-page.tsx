@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import firebase from 'firebase/app';
-import 'firebase/firestore';
+import 'firebase/database';
 import 'firebase/auth';
 import { FIREBASE_CONFIG } from '../constants';
 import { Player } from '../type';
@@ -35,13 +35,12 @@ const LobbyPage: React.FC = () => {
   const roomCode = useMemo(() => localStorage.getItem('roomCode') || '', []);
   const playerName = useMemo(() => localStorage.getItem('playerName') || '', []);
   const creatorFlag = useMemo(() => localStorage.getItem('isHost') === 'true', []);
-  const db = useMemo(() => getApp().firestore(), []);
+  
+  const db = useMemo(() => getApp().database(), []);
   const auth = useMemo(() => getApp().auth(), []);
-  const playersCol = useMemo(() => db.collection('rooms').doc(roomCode).collection('players'), [
-    db,
-    roomCode
-  ]);
-  const lobbyDoc = useMemo(() => db.collection('rooms').doc(roomCode), [db, roomCode]);
+  
+  const lobbyRef = useMemo(() => db.ref(`rooms/${roomCode}`), [db, roomCode]);
+  const playersRef = useMemo(() => lobbyRef.child('players'), [lobbyRef]);
 
   useEffect(() => {
     const code = localStorage.getItem('roomCode') || '';
@@ -52,37 +51,26 @@ const LobbyPage: React.FC = () => {
 
     let isMounted = true;
     let currentUID = '';
-    let unsubscribePlayers: (() => void) | undefined;
-    let unsubscribeLobby: (() => void) | undefined;
 
     const ensureLobbyExists = async () => {
-      const snap = await lobbyDoc.get();
-      if (!snap.exists) {
+      const snap = await lobbyRef.once('value');
+      if (!snap.exists()) {
         const initialLobby: LobbyDoc = {
           hostId: null,
           status: 'waiting',
           startedAt: null,
           updatedAt: Date.now()
         };
-        await lobbyDoc.set(initialLobby, { merge: true });
+        await lobbyRef.update(initialLobby);
       }
     };
 
     const tryClaimHost = async (uid: string) => {
-      await db.runTransaction(async (tx) => {
-        const snap = await tx.get(lobbyDoc);
-        const data = (snap.data() || {}) as LobbyDoc;
-        if (!data.hostId) {
-          tx.set(
-            lobbyDoc,
-            {
-              hostId: uid,
-              status: data.status || 'waiting',
-              updatedAt: Date.now()
-            },
-            { merge: true }
-          );
+      await lobbyRef.child('hostId').transaction((currentHostId: string | null) => {
+        if (!currentHostId) {
+          return uid;
         }
+        return undefined; // Abort
       });
     };
 
@@ -99,27 +87,32 @@ const LobbyPage: React.FC = () => {
         setMyUID(currentUID);
 
         await ensureLobbyExists();
-        await playersCol.doc(currentUID).set(
-          {
-            name: playerName,
-            r: 0.5,
-            c: 0.5,
-            goldCount: 0,
-            finishTime: null,
-            reachedGoal: false,
-            joinedAt: Date.now(),
-            startTime: null
-          },
-          { merge: true }
-        );
+        
+        const playerRef = playersRef.child(currentUID);
+        await playerRef.set({
+          name: playerName,
+          r: 0.5,
+          c: 0.5,
+          goldCount: 0,
+          finishTime: null,
+          reachedGoal: false,
+          joinedAt: Date.now(),
+          startTime: null
+        });
+
+        // Set onDisconnect to remove player
+        playerRef.onDisconnect().remove();
+
         await tryClaimHost(currentUID);
 
-        unsubscribePlayers = playersCol.onSnapshot(async (snapshot) => {
+        const playersListener = playersRef.on('value', async (snapshot: firebase.database.DataSnapshot) => {
           const nextPlayers: Player[] = [];
-          snapshot.forEach((doc) => {
-            const p = doc.data();
+          const playersData = snapshot.val() || {};
+          
+          Object.keys(playersData).forEach((id) => {
+            const p = playersData[id];
             nextPlayers.push({
-              id: doc.id,
+              id: id,
               name: p.name,
               location: { r: p.r || 0, c: p.c || 0 },
               goldCount: p.goldCount || 0,
@@ -129,19 +122,23 @@ const LobbyPage: React.FC = () => {
               startTime: p.startTime
             });
           });
+          
           setPlayers(nextPlayers);
 
-          const lobbySnapshot = await lobbyDoc.get();
-          const lobbyData = (lobbySnapshot.data() || {}) as LobbyDoc;
+          const lobbySnap = await lobbyRef.once('value');
+          const lobbyData = (lobbySnap.val() || {}) as LobbyDoc;
+          
           if (lobbyData.hostId && nextPlayers.some((p) => p.id === lobbyData.hostId)) {
             return;
           }
 
           if (nextPlayers.length === 0) {
-            await lobbyDoc.set(
-              { hostId: null, status: 'waiting', startedAt: null, updatedAt: Date.now() },
-              { merge: true }
-            );
+            await lobbyRef.update({
+              hostId: null,
+              status: 'waiting',
+              startedAt: null,
+              updatedAt: Date.now()
+            });
             return;
           }
 
@@ -151,19 +148,16 @@ const LobbyPage: React.FC = () => {
           )[0];
 
           if (nextHost?.id) {
-            await lobbyDoc.set(
-              {
-                hostId: nextHost.id,
-                status: 'waiting',
-                updatedAt: Date.now()
-              },
-              { merge: true }
-            );
+            await lobbyRef.update({
+              hostId: nextHost.id,
+              status: 'waiting',
+              updatedAt: Date.now()
+            });
           }
         });
 
-        unsubscribeLobby = lobbyDoc.onSnapshot((snapshot) => {
-          const data = (snapshot.data() || {}) as LobbyDoc;
+        const lobbyListener = lobbyRef.on('value', (snapshot: firebase.database.DataSnapshot) => {
+          const data = (snapshot.val() || {}) as LobbyDoc;
           const status = data.status || 'waiting';
           setLobbyStatus(status);
           setIsHost(Boolean(currentUID && data.hostId === currentUID));
@@ -172,8 +166,12 @@ const LobbyPage: React.FC = () => {
             history.push('/game');
           }
         });
+
+        return () => {
+          playersRef.off('value', playersListener);
+          lobbyRef.off('value', lobbyListener);
+        };
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Lobby init failed:', error);
         setLoading(false);
       }
@@ -183,10 +181,10 @@ const LobbyPage: React.FC = () => {
 
     return () => {
       isMounted = false;
-      if (unsubscribePlayers) unsubscribePlayers();
-      if (unsubscribeLobby) unsubscribeLobby();
+      playersRef.off();
+      lobbyRef.off();
     };
-  }, [auth, db, history, lobbyDoc, playerName, playersCol]);
+  }, [auth, db, history, lobbyRef, playerName, playersRef]);
 
   const canManageLobby = isHost || creatorFlag;
 
@@ -194,65 +192,49 @@ const LobbyPage: React.FC = () => {
     if (!canManageLobby || !myUID) return;
     const now = Date.now();
 
-    const snapshot = await playersCol.get();
-    const batch = db.batch();
-    snapshot.forEach((doc) => {
-      batch.set(
-        playersCol.doc(doc.id),
-        {
-          startTime: now,
-          finishTime: null,
-          reachedGoal: false,
-          goldCount: 0,
-          r: 0.5,
-          c: 0.5
-        },
-        { merge: true }
-      );
+    const snapshot = await playersRef.once('value');
+    const playersData = snapshot.val() || {};
+    
+    const updates: any = {};
+    Object.keys(playersData).forEach((id) => {
+      updates[`players/${id}/startTime`] = now;
+      updates[`players/${id}/finishTime`] = null;
+      updates[`players/${id}/reachedGoal`] = false;
+      updates[`players/${id}/goldCount`] = 0;
+      updates[`players/${id}/r`] = 0.5;
+      updates[`players/${id}/c`] = 0.5;
     });
 
-    batch.set(
-      lobbyDoc,
-      {
-        hostId: myUID,
-        status: 'started',
-        startedAt: now,
-        updatedAt: now
-      },
-      { merge: true }
-    );
+    updates['hostId'] = myUID;
+    updates['status'] = 'started';
+    updates['startedAt'] = now;
+    updates['updatedAt'] = now;
 
-    await batch.commit();
+    await lobbyRef.update(updates);
   };
 
   const handleResetLobby = async () => {
     if (!canManageLobby || !myUID) return;
-    await lobbyDoc.set(
-      {
-        hostId: myUID,
-        status: 'waiting',
-        startedAt: null,
-        updatedAt: Date.now()
-      },
-      { merge: true }
-    );
+    await lobbyRef.update({
+      hostId: myUID,
+      status: 'waiting',
+      startedAt: null,
+      updatedAt: Date.now()
+    });
   };
 
   const handleLeaveLobby = async () => {
     if (myUID) {
-      await playersCol.doc(myUID).delete();
-      const lobbySnapshot = await lobbyDoc.get();
-      const data = (lobbySnapshot.data() || {}) as LobbyDoc;
+      await playersRef.child(myUID).remove();
+      const lobbySnapshot = await lobbyRef.once('value');
+      const data = (lobbySnapshot.val() || {}) as LobbyDoc;
       if (data.hostId === myUID) {
-        await lobbyDoc.set(
-          {
-            hostId: null,
-            status: 'waiting',
-            startedAt: null,
-            updatedAt: Date.now()
-          },
-          { merge: true }
-        );
+        await lobbyRef.update({
+          hostId: null,
+          status: 'waiting',
+          startedAt: null,
+          updatedAt: Date.now()
+        });
       }
     }
     localStorage.removeItem('playerName');
@@ -267,7 +249,6 @@ const LobbyPage: React.FC = () => {
       await navigator.clipboard.writeText(roomCode);
       setCopyState('copied');
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Copy room code failed:', error);
       setCopyState('failed');
     }
@@ -346,7 +327,7 @@ const LobbyPage: React.FC = () => {
           </div>
 
           <div className="lobby-player-grid">
-            {players.map((p, index) => {
+            {players.map((p: Player, index: number) => {
               const isMe = p.id === myUID;
               const isPlayerHost = p.id === players[0]?.id;
               return (

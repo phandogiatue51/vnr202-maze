@@ -14,8 +14,8 @@ import {
 import { getContext } from './misc-util';
 
 const TWO_PI = 2 * Math.PI;
-const DEFAULT_STOKE_WIDTH = 5;
-const PLAYER_STOKE_WIDTH = 2;
+const DEFAULT_STOKE_WIDTH = 10;
+const PLAYER_STOKE_WIDTH = 4;
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
