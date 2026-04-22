@@ -4,11 +4,12 @@ interface CanvasProps {
   onKeyDown?: KeyboardEventHandler<HTMLCanvasElement>;
   onKeyUp?: KeyboardEventHandler<HTMLCanvasElement>;
   size: number;
+  className?: string;
 }
 
 const Canvas = React.forwardRef(
   (props: CanvasProps, ref: LegacyRef<HTMLCanvasElement>): JSX.Element => {
-    const { size, onKeyUp, onKeyDown } = props;
+    const { size, onKeyUp, onKeyDown, className } = props;
     return (
       <canvas
         onKeyDown={onKeyDown}
@@ -16,7 +17,7 @@ const Canvas = React.forwardRef(
         ref={ref}
         width={size}
         height={size}
-        className="bg-white"
+        className={className || 'bg-white'}
       />
     );
   }
@@ -24,7 +25,8 @@ const Canvas = React.forwardRef(
 
 Canvas.defaultProps = {
   onKeyDown: () => true,
-  onKeyUp: () => true
+  onKeyUp: () => true,
+  className: 'bg-white'
 };
 
 export default Canvas;

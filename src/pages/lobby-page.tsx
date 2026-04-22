@@ -33,6 +33,7 @@ const LobbyPage: React.FC = () => {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const roomCode = useMemo(() => localStorage.getItem('roomCode') || '', []);
+  const playerName = useMemo(() => localStorage.getItem('playerName') || '', []);
   const db = useMemo(() => getApp().firestore(), []);
   const auth = useMemo(() => getApp().auth(), []);
   const playersCol = useMemo(() => db.collection('rooms').doc(roomCode).collection('players'), [
@@ -42,7 +43,6 @@ const LobbyPage: React.FC = () => {
   const lobbyDoc = useMemo(() => db.collection('rooms').doc(roomCode), [db, roomCode]);
 
   useEffect(() => {
-    const playerName = localStorage.getItem('playerName') || '';
     const code = localStorage.getItem('roomCode') || '';
     if (!playerName || !code) {
       history.push('/');
@@ -183,7 +183,7 @@ const LobbyPage: React.FC = () => {
       if (unsubscribePlayers) unsubscribePlayers();
       if (unsubscribeLobby) unsubscribeLobby();
     };
-  }, [auth, db, history, lobbyDoc, playersCol, roomCode]);
+  }, [auth, db, history, lobbyDoc, playerName, playersCol]);
 
   const handleStartGame = async () => {
     if (!isHost || !myUID) return;
@@ -276,9 +276,9 @@ const LobbyPage: React.FC = () => {
       return 'Đang kết nối vào sảnh chờ...';
     }
     if (isHost) {
-      return 'Bạn là chủ phòng. Hãy bắt đầu khi mọi người đã sẵn sàng.';
+      return 'Bạn là chủ phòng. Khi mọi người đã sẵn sàng, hãy bắt đầu trận đấu.';
     }
-    return 'Đang chờ chủ phòng bắt đầu cuộc đua...';
+    return 'Bạn đang chờ chủ phòng bắt đầu trận đấu.';
   };
 
   const getCopyButtonText = (): string => {
@@ -291,143 +291,127 @@ const LobbyPage: React.FC = () => {
     return 'Sao chép mã phòng';
   };
 
+  const getLobbyStatusLabel = (): string => {
+    return lobbyStatus === 'started' ? 'Đang thi đấu' : 'Đang chờ';
+  };
+
   return (
-    <>
-      <div
-        className="home-container"
-        style={{
-          minHeight: 'calc(100vh - 100px)',
-          justifyContent: 'flex-start',
-          paddingTop: '4rem'
-        }}
-      >
-        <div
-          className="p-5"
-          style={{
-            background: '#1e293b',
-            borderRadius: '20px',
-            border: '2px solid #fbbf24',
-            maxWidth: '600px',
-            width: '100%',
-            textAlign: 'center'
-          }}
-        >
-          <h2 className="text-warning mb-3 font-bold text-4xl">Sảnh chờ</h2>
-          <p className="text-white-50 mb-4">{getStatusMsg()}</p>
+    <div className="home-container lobby-shell">
+      <div className="lobby-card">
+        <div className="lobby-hero">
+          <div className="lobby-hero-copy">
+            <span className="lobby-eyebrow">Phòng thi đấu</span>
+            <h2 className="lobby-title">Sảnh chờ</h2>
+            <p className="lobby-status-message">{getStatusMsg()}</p>
+          </div>
+          <div className="lobby-room-pill">
+            <span className="lobby-room-pill-label">Mã phòng</span>
+            <strong className="lobby-room-pill-value">{roomCode || '------'}</strong>
+          </div>
+        </div>
 
-          <div className="lobby-meta-grid">
-            <div className="lobby-meta-card">
-              <span className="lobby-meta-label">Mã phòng</span>
-              <strong className="lobby-meta-value">{roomCode || '------'}</strong>
+        <div className="lobby-meta-grid">
+          <div className="lobby-meta-card">
+            <span className="lobby-meta-label">Trạng thái</span>
+            <strong className="lobby-meta-value">{getLobbyStatusLabel()}</strong>
+          </div>
+          <div className="lobby-meta-card">
+            <span className="lobby-meta-label">Người chơi</span>
+            <strong className="lobby-meta-value">{players.length}</strong>
+          </div>
+          <div className="lobby-meta-card">
+            <span className="lobby-meta-label">Vai trò</span>
+            <strong className="lobby-meta-value">{isHost ? 'Chủ phòng' : 'Thành viên'}</strong>
+          </div>
+        </div>
+
+        <div className="lobby-section">
+          <div className="lobby-section-header">
+            <div>
+              <h3 className="lobby-section-title">Người đang trong phòng</h3>
+              <p className="lobby-section-subtitle">Kiểm tra nhanh ai đã sẵn sàng trước khi bắt đầu.</p>
             </div>
-            <div className="lobby-meta-card">
-              <span className="lobby-meta-label">Trạng thái</span>
-              <strong className="lobby-meta-value">
-                {lobbyStatus === 'started' ? 'Đang thi đấu' : 'Đang chờ'}
-              </strong>
-            </div>
-            <div className="lobby-meta-card">
-              <span className="lobby-meta-label">Số người chơi</span>
-              <strong className="lobby-meta-value">{players.length}</strong>
+            <div className="lobby-user-badge">
+              <span className="lobby-user-badge-label">Bạn</span>
+              <span className="lobby-user-badge-value">{playerName}</span>
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '12px',
-              padding: '20px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '15px',
-              marginBottom: '20px',
-              width: '100%'
-            }}
-          >
-            {players.map((p) => (
-              <span
-                key={p.id}
-                style={{
-                  fontSize: '1.1rem',
-                  color: p.id === myUID ? '#fbbf24' : '#fff',
-                  fontWeight: p.id === myUID ? 'bold' : 'normal',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  padding: '8px 16px',
-                  borderRadius: '30px',
-                  border: `1px solid ${p.id === myUID ? '#fbbf24' : 'rgba(255, 255, 255, 0.2)'}`
-                }}
-              >
-                {p.name} {p.id === myUID && '(Bạn)'}
-              </span>
-            ))}
+          <div className="lobby-player-grid">
+            {players.map((p, index) => {
+              const isMe = p.id === myUID;
+              const isPlayerHost = p.id === players[0]?.id;
+              return (
+                <div
+                  key={p.id}
+                  className={`lobby-player-chip lobby-player-card-${(index % 4) + 1}${isMe ? ' is-me' : ''}`}
+                >
+                  <div className="lobby-player-orb-wrap">
+                    <div className="lobby-player-avatar">
+                      <span className="lobby-player-avatar-letter">
+                        {(p.name || '?').slice(0, 1).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="lobby-player-text">
+                    <span className="lobby-player-name">{p.name}</span>
+                    <span className="lobby-player-role">
+                      {isPlayerHost ? 'Chủ phòng' : 'Sẵn sàng tham gia'}
+                    </span>
+                  </div>
+
+                  <div className="lobby-player-chip-bottom">
+                    <span className="lobby-player-index">#{index + 1}</span>
+                    <div className="lobby-player-badges">
+                      {isMe && <span className="lobby-player-badge">Bạn</span>}
+                      {isPlayerHost && <span className="lobby-host-tag">Host</span>}
+                      <span className="lobby-player-status-dot" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="lobby-section lobby-actions-panel">
+          <div className="lobby-section-header">
+            <div>
+              <h3 className="lobby-section-title">Điều khiển phòng</h3>
+              <p className="lobby-section-subtitle">Sao chép mã phòng hoặc bắt đầu khi mọi người đã vào đủ.</p>
+            </div>
           </div>
 
-          <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-              <span className="text-white-50">
-                Tên của bạn:{' '}
-                <span className="text-warning fw-bold">{localStorage.getItem('playerName')}</span>
-              </span>
-              {isHost && <span className="badge bg-warning text-dark"> [CHỦ PHÒNG]</span>}
-            </div>
+          <div className="lobby-action-grid">
+            <button type="button" onClick={handleCopyRoomCode} className="menu-btn btn-soft">
+              {getCopyButtonText()}
+            </button>
 
-            <div className="flex flex-col gap-3 w-full max-w-md mx-auto p-4">
-              {/* COPY CODE BUTTON - Secondary Outline */}
+            {isHost && (
               <button
                 type="button"
-                onClick={handleCopyRoomCode}
-                className="px-4 py-3 rounded-xl font-bold border-2 border-amber-400 text-amber-400 
-               transition-all duration-200 hover:bg-amber-400 hover:text-slate-900 
-               active:scale-95 focus:outline-none"
+                onClick={handleStartGame}
+                disabled={players.length < 1 || loading}
+                className="menu-btn btn-play"
               >
-                {getCopyButtonText()}
+                {loading ? 'Đang tải...' : 'Bắt đầu trò chơi'}
               </button>
+            )}
 
-              {isHost && (
-                <>
-                  {/* START GAME BUTTON - Primary Solid (Full Width) */}
-                  <button
-                    type="button"
-                    onClick={handleStartGame}
-                    disabled={players.length < 1 || loading}
-                    className="col-span-2 px-4 py-4 rounded-xl font-black text-lg uppercase tracking-wider
-                   bg-amber-400 text-slate-900 border-b-4 border-amber-600
-                   transition-all duration-100 hover:bg-amber-300 hover:-translate-y-0.5
-                   active:translate-y-0.5 active:border-b-0
-                   disabled:opacity-50 disabled:grayscale disabled:pointer-events-none"
-                  >
-                    {loading ? 'Đang tải...' : 'Bắt đầu trò chơi'}
-                  </button>
-
-                  {/* RESET BUTTON - Danger Outline */}
-                  <button
-                    type="button"
-                    onClick={handleResetLobby}
-                    className="px-4 py-3 rounded-xl font-bold border-2 border-red-400 text-red-400 
-                   transition-all duration-200 hover:bg-red-400 hover:text-white 
-                   active:scale-95 focus:outline-none"
-                  >
-                    Đặt lại phòng
-                  </button>
-                </>
-              )}
-
-              {/* LEAVE BUTTON - Neutral Outline */}
-              <button
-                type="button"
-                onClick={handleLeaveLobby}
-                className="px-4 py-3 rounded-xl font-bold border-2 border-gray-500 text-gray-500 
-               transition-all duration-200 hover:bg-gray-500 hover:text-white 
-               active:scale-95 focus:outline-none"
-              >
-                Rời sảnh & Đổi tên
+            {isHost && (
+              <button type="button" onClick={handleResetLobby} className="menu-btn btn-danger-soft">
+                Đặt lại phòng
               </button>
-            </div>
+            )}
+
+            <button type="button" onClick={handleLeaveLobby} className="menu-btn btn-rule">
+              Rời sảnh và đổi tên
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

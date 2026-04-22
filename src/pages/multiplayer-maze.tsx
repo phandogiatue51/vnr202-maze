@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useMediaQuery } from 'react-responsive';
 import { toast } from 'react-toastify';
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import Canvas from '../components/canvas';
-import Container from '../components/container';
 import QuestionModal from '../components/question-modal';
 import Leaderboard from '../components/leaderboard';
 import { FIREBASE_CONFIG, IDLE_CONTROL, TOAST_CONFIG } from '../constants';
-import getCanvasSize, { getOnKey, getOffKey } from '../lib/misc-util';
+import { getOnKey, getOffKey } from '../lib/misc-util';
 import MultiplayerGame from '../lib/multiplayer-game';
 import { CallBack, Control, Gold, Player } from '../type';
 
@@ -22,16 +20,27 @@ const createOnLeave = (cleanUp: () => void) => {
   const onLeave = () => {
     cleanUp();
   };
+
   window.addEventListener('beforeunload', onLeave);
   window.addEventListener('pagehide', onLeave);
+};
+
+const getResponsiveCanvasSize = (): number => {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  if (viewportWidth < 1100) {
+    return Math.max(280, Math.min(viewportWidth - 48, viewportHeight - 260, 640));
+  }
+
+  const columnWidth = (viewportWidth - 112) / 2;
+  return Math.max(360, Math.min(columnWidth, viewportHeight - 120, 820));
 };
 
 function MultiplayerMaze(): JSX.Element {
   const history = useHistory();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bigScreen = useMediaQuery({ query: '(min-width: 600px)' });
-  const midScreen = useMediaQuery({ query: '(min-width: 400px)' });
-  const [canvasSize, setCanvasSize] = useState(getCanvasSize(bigScreen, midScreen));
+  const [canvasSize, setCanvasSize] = useState(getResponsiveCanvasSize);
   const gameRef = useRef<MultiplayerGame>();
   const animationRef = useRef(0);
   const control = useRef<Control>(IDLE_CONTROL);
@@ -40,13 +49,12 @@ function MultiplayerMaze(): JSX.Element {
   const [timeLeft, setTimeLeft] = useState(300);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [collectedCount, setCollectedCount] = useState(0);
+  const hitGoldRef = useRef<Gold | null>(null);
 
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
-
-  const hitGoldRef = useRef<Gold | null>(null);
-  const [isFinished, setIsFinished] = useState(false);
-  const [collectedCount, setCollectedCount] = useState(0);
 
   useEffect(() => {
     const playerName = localStorage.getItem('playerName');
@@ -107,6 +115,7 @@ function MultiplayerMaze(): JSX.Element {
         if (seconds <= 0) setIsGameOver(true);
       }
     );
+
     gameRef.current = game;
     const playerName = localStorage.getItem('playerName');
     if (playerName) {
@@ -123,6 +132,7 @@ function MultiplayerMaze(): JSX.Element {
       clearInterval(interval);
       game.cleanUp();
     });
+
     return () => {
       clearInterval(interval);
       game.cleanUp();
@@ -130,8 +140,14 @@ function MultiplayerMaze(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    setCanvasSize(getCanvasSize(bigScreen, midScreen));
-  }, [bigScreen, midScreen]);
+    const handleResize = () => {
+      setCanvasSize(getResponsiveCanvasSize());
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     animationRef.current = requestAnimationFrame(animate);
@@ -146,23 +162,34 @@ function MultiplayerMaze(): JSX.Element {
 
   return (
     <>
-      <div className="timer-overlay">
-        <span className="timer-label">Thời gian còn lại:</span>
-        <span className="timer-value">{formatTime(timeLeft)}</span>
-      </div>
-      <div className="timer-overlay" style={{ right: '20px', left: 'auto' }}>
-        <span className="timer-label">Tài liệu:</span>
-        <span className="timer-value">{collectedCount}</span>
-      </div>
-
       <div className="game-layout">
         <div className="maze-container-wrapper">
-          <Container onKeyDown={onKey} onKeyUp={offKey}>
-            <Canvas ref={canvasRef} size={canvasSize} />
-          </Container>
+          <div
+            tabIndex={0}
+            role="button"
+            onKeyDown={onKey}
+            onKeyUp={offKey}
+            className="maze-stage"
+            aria-label="Maze game area"
+          >
+            <div className="maze-stage-inner">
+              <Canvas ref={canvasRef} size={canvasSize} className="maze-canvas" />
+            </div>
+          </div>
         </div>
 
         <div className="live-leaderboard-wrapper">
+          <div className="leaderboard-stats">
+            <div className="leaderboard-stat-pill">
+              <span className="leaderboard-stat-label">Thời gian còn lại</span>
+              <span className="leaderboard-stat-value">{formatTime(timeLeft)}</span>
+            </div>
+            <div className="leaderboard-stat-pill">
+              <span className="leaderboard-stat-label">Tài liệu</span>
+              <span className="leaderboard-stat-value">{collectedCount}</span>
+            </div>
+          </div>
+
           <Leaderboard
             players={allPlayers}
             title="Bảng xếp hạng trực tiếp"
@@ -170,6 +197,7 @@ function MultiplayerMaze(): JSX.Element {
           />
         </div>
       </div>
+
       {hitGold && (
         <QuestionModal
           gold={hitGold}
@@ -189,6 +217,7 @@ function MultiplayerMaze(): JSX.Element {
             } else {
               toast.error('Sai câu trả lời. Hãy thử lại sau.', TOAST_CONFIG);
             }
+
             hitGoldRef.current = null;
             setHitGold(null);
           }}
@@ -197,34 +226,33 @@ function MultiplayerMaze(): JSX.Element {
 
       {(isGameOver || isFinished) && (
         <div className="game-over-overlay">
-          <Leaderboard
-            players={allPlayers.filter((p) => p.finishTime)}
-            title="Kết quả trận đấu"
-            myUID={gameRef.current?.getMyPlayerId()}
-          />
-          <div
-            className="mt-4"
-            style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}
-          >
-            <button
-              type="button"
-              className="menu-btn btn-play"
-              onClick={() => window.location.reload()}
-            >
-              Chơi lại
-            </button>
-            <button
-              type="button"
-              className="menu-btn btn-rule"
-              onClick={() => {
-                localStorage.removeItem('playerName');
-                localStorage.removeItem('roomCode');
-                localStorage.removeItem('isHost');
-                window.location.href = '#/';
-              }}
-            >
-              Thoát ra menu
-            </button>
+          <div className="game-over-panel">
+            <Leaderboard
+              players={allPlayers.filter((p) => p.finishTime)}
+              title="Kết quả trận đấu"
+              myUID={gameRef.current?.getMyPlayerId()}
+            />
+            <div className="game-over-actions">
+              <button
+                type="button"
+                className="menu-btn btn-play"
+                onClick={() => window.location.reload()}
+              >
+                Chơi lại
+              </button>
+              <button
+                type="button"
+                className="menu-btn btn-rule"
+                onClick={() => {
+                  localStorage.removeItem('playerName');
+                  localStorage.removeItem('roomCode');
+                  localStorage.removeItem('isHost');
+                  window.location.href = '#/';
+                }}
+              >
+                Thoát ra menu
+              </button>
+            </div>
           </div>
         </div>
       )}
