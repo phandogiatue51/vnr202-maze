@@ -59,6 +59,58 @@ const QUICK_TIPS = [
   'Sau khi có tài liệu đầu tiên, hãy bắt đầu nhớ đường về đích.'
 ];
 
+const ITEM_RULES = [
+  {
+    type: 'torch',
+    name: 'Đuốc',
+    effect: 'Hiện đường chỉ dẫn (line vàng) đến đích trong 10 giây.',
+    icon: '🔦',
+    color: '#fbbf24'
+  },
+  {
+    type: 'shield',
+    name: 'Khiên',
+    effect: 'Chặn 1 hiệu ứng xấu từ đối thủ. Tự động kích hoạt khi có.',
+    icon: '🛡️',
+    color: '#38bdf8'
+  },
+  {
+    type: 'boom',
+    name: 'Bom nổ',
+    effect: 'Làm đối thủ nổ tung và mất 1 tài liệu. (Vật phẩm chọn mục tiêu)',
+    icon: '💣',
+    color: '#ef4444'
+  },
+  {
+    type: 'net',
+    name: 'Lưới',
+    effect: 'Trói chân đối thủ trong 5 giây. (Vật phẩm chọn mục tiêu)',
+    icon: '🕸️',
+    color: '#94a3b8'
+  },
+  {
+    type: 'flash',
+    name: 'Bom mù',
+    effect: 'Làm lóa mắt đối thủ trong 2 giây. (Vật phẩm chọn mục tiêu)',
+    icon: '✨',
+    color: '#fde047'
+  },
+  {
+    type: 'smoke',
+    name: 'Bom khói',
+    effect: 'Che khuất tầm nhìn đối thủ trong 5 giây. (Vật phẩm chọn mục tiêu)',
+    icon: '💨',
+    color: '#64748b'
+  },
+  {
+    type: 'banana',
+    name: 'Vỏ chuối',
+    effect: 'Bẫy trên bản đồ, dẫm phải sẽ bị đảo ngược điều khiển trong 10 giây.',
+    icon: '🍌',
+    color: '#fbbf24'
+  }
+];
+
 const RulesPage: React.FC = () => {
   const history = useHistory();
 
@@ -104,6 +156,23 @@ const RulesPage: React.FC = () => {
                 </div>
               </article>
             ))}
+          </div>
+
+          <div className="rules-items-section">
+            <h3 className="rules-section-title-large">Vật phẩm & Hiệu ứng</h3>
+            <div className="rules-items-grid">
+              {ITEM_RULES.map((item) => (
+                <div key={item.type} className="rules-item-card">
+                  <div className="rules-item-icon-wrap" style={{ backgroundColor: `${item.color}20`, borderColor: `${item.color}40` }}>
+                    <span className="rules-item-icon">{item.icon}</span>
+                  </div>
+                  <div className="rules-item-info">
+                    <h4 className="rules-item-name" style={{ color: item.color }}>{item.name}</h4>
+                    <p className="rules-item-effect">{item.effect}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="rules-tips-panel">

@@ -430,7 +430,6 @@ export default class MultiplayerGame {
     });
     auth.onAuthStateChanged((user: firebase.User | null) => {
       if (user) {
-        if (this.callBack) this.callBack(true, 'Đăng nhập thành công.');
         this.myUID = user.uid;
         if (this.isEntered) this.syncPlayer();
         this.addPlayersListener();

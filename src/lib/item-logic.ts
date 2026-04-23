@@ -2,11 +2,11 @@ import { Cord, ItemType, MapItem, PlayerEffects, PlayerInventory } from '../type
 import { SeededRandom } from './gold-logic';
 
 const ITEM_COUNTS: Array<{ type: ItemType; count: number; trap?: boolean }> = [
-  { type: 'torch', count: 2 },
+  { type: 'torch', count: 5 },
   { type: 'boom', count: 5 },
   { type: 'flash', count: 5 },
   { type: 'net', count: 5 },
-  { type: 'banana', count: 10, trap: true },
+  { type: 'banana', count: 20, trap: true },
   { type: 'shield', count: 5 },
   { type: 'smoke', count: 5 }
 ];
