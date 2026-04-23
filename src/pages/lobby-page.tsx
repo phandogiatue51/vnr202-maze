@@ -5,6 +5,7 @@ import 'firebase/database';
 import 'firebase/auth';
 import { FIREBASE_CONFIG } from '../constants';
 import { Player } from '../type';
+import { createDefaultEffects, createDefaultInventory } from '../lib/item-logic';
 import './home-page.css';
 
 type LobbyStatus = 'waiting' | 'started';
@@ -94,6 +95,9 @@ const LobbyPage: React.FC = () => {
           r: 0.5,
           c: 0.5,
           goldCount: 0,
+          shieldCount: 0,
+          inventory: createDefaultInventory(),
+          effects: createDefaultEffects(),
           finishTime: null,
           reachedGoal: false,
           joinedAt: Date.now(),
@@ -116,6 +120,9 @@ const LobbyPage: React.FC = () => {
               name: p.name,
               location: { r: p.r || 0, c: p.c || 0 },
               goldCount: p.goldCount || 0,
+              shieldCount: p.shieldCount || 0,
+              inventory: p.inventory || createDefaultInventory(),
+              effects: p.effects || createDefaultEffects(),
               finishTime: p.finishTime,
               reachedGoal: Boolean(p.reachedGoal),
               joinedAt: p.joinedAt,
@@ -201,10 +208,15 @@ const LobbyPage: React.FC = () => {
       updates[`players/${id}/finishTime`] = null;
       updates[`players/${id}/reachedGoal`] = false;
       updates[`players/${id}/goldCount`] = 0;
+      updates[`players/${id}/shieldCount`] = 0;
+      updates[`players/${id}/inventory`] = createDefaultInventory();
+      updates[`players/${id}/effects`] = createDefaultEffects();
       updates[`players/${id}/r`] = 0.5;
       updates[`players/${id}/c`] = 0.5;
     });
 
+    updates['golds'] = null;
+    updates['items'] = null;
     updates['hostId'] = myUID;
     updates['status'] = 'started';
     updates['startedAt'] = now;

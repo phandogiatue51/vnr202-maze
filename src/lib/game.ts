@@ -1,14 +1,16 @@
 import CanvasManager from './canvas-manager';
 import { generateMazeSync } from './maze-generator';
-import { Cell, Cord, Direction, CanvasOrNull, Control, Player, Gold } from '../type';
+import { Cell, Cord, Direction, CanvasOrNull, Control, Player, Gold, MapItem } from '../type';
 import { generateGold, checkGoldCollision } from './gold-logic';
+import { checkMapItemCollision, generateMapItems, isEffectActive } from './item-logic';
 import { hasDirection } from './direction-util';
 import { generatePlayer, randomColorFromString } from './misc-util';
 import {
   MAX_SPEED,
   PLAYER_RADIUS_TO_CELL_RATIO as MARGIN,
   START_POS,
-  MAZE_SEED
+  MAZE_SEED,
+  VIEWPORT_SIZE
 } from '../constants';
 
 export default class Game {
@@ -28,18 +30,27 @@ export default class Game {
 
   private goldItems: Gold[];
 
+  private mapItems: MapItem[];
+
   private playersMap?: Map<string, Player>;
 
   private onGoldHit?: (gold: Gold) => void;
 
+  private onMapItemHit?: (item: MapItem) => void;
+
   private activeGoldCollisionId?: string;
+
+  private activeItemCollisionId?: string;
+
+  private viewportSize = VIEWPORT_SIZE;
 
   constructor(
     canvas: CanvasOrNull,
     level: number,
     seed?: number,
     pid?: string,
-    onGoldHit?: (gold: Gold) => void
+    onGoldHit?: (gold: Gold) => void,
+    onMapItemHit?: (item: MapItem) => void
   ) {
     this.seed = seed || MAZE_SEED;
     this.level = level;
@@ -48,7 +59,9 @@ export default class Game {
     this.maze = generateMazeSync(this.gridSize, this.seed);
     this.canvasManager = new CanvasManager(canvas);
     this.goldItems = generateGold(this.gridSize, this.seed);
+    this.mapItems = generateMapItems(this.gridSize, this.seed);
     this.onGoldHit = onGoldHit;
+    this.onMapItemHit = onMapItemHit;
   }
 
   public getMaze = (): Cell[][] => {
@@ -67,6 +80,10 @@ export default class Game {
     return this.canvasManager;
   };
 
+  public getMapItems = (): MapItem[] => {
+    return this.mapItems;
+  };
+
   public getSeed = (): number | undefined => {
     return this.seed;
   };
@@ -81,6 +98,14 @@ export default class Game {
 
   public setPlayersMap = (players: Map<string, Player>): void => {
     this.playersMap = players;
+  };
+
+  public setMapItems = (items: MapItem[]): void => {
+    this.mapItems = items;
+  };
+
+  public setViewportSize = (viewportSize: number): void => {
+    this.viewportSize = viewportSize;
   };
 
   public setCanvas = (canvas: CanvasOrNull): void => {
@@ -98,28 +123,54 @@ export default class Game {
     const hitGold = checkGoldCollision(this.player.location, this.goldItems, MARGIN);
     if (!hitGold) {
       this.activeGoldCollisionId = undefined;
+    } else if (hitGold.id !== this.activeGoldCollisionId && this.onGoldHit) {
+      this.activeGoldCollisionId = hitGold.id;
+      this.onGoldHit(hitGold);
+    }
+
+    const hitItem = checkMapItemCollision(this.player.location, this.mapItems, MARGIN);
+    if (!hitItem) {
+      this.activeItemCollisionId = undefined;
       return;
     }
 
-    // Trigger gold question only once per continuous collision.
-    if (hitGold.id !== this.activeGoldCollisionId && this.onGoldHit) {
-      this.activeGoldCollisionId = hitGold.id;
-      this.onGoldHit(hitGold);
+    if (hitItem.id !== this.activeItemCollisionId && this.onMapItemHit) {
+      this.activeItemCollisionId = hitItem.id;
+      this.onMapItemHit(hitItem);
     }
   };
 
   public renderGame = (): void => {
     if (!this.canvasManager) return;
     this.canvasManager.refreshContext();
-    this.canvasManager.drawGrid(this.maze, this.player.location);
+    this.canvasManager.drawGrid(this.maze, this.player.location, this.viewportSize);
+    const currentPlayer = this.playersMap?.get(this.player.id) || this.player;
+    if (isEffectActive(currentPlayer.effects?.torchUntil)) {
+      this.canvasManager.drawTorchTrail(this.getPathToGoal());
+    }
+    this.canvasManager.drawMapItems(this.mapItems);
     this.canvasManager.drawGolds(this.goldItems);
     this.canvasManager.drawStartFinish(this.maze);
     this.opPositions?.forEach((pos, id) => {
-      const name = this.playersMap?.get(id)?.name;
-      this.canvasManager.drawPlayer(pos, randomColorFromString(id), this.player.location, name);
+      const player = this.playersMap?.get(id);
+      this.canvasManager.drawPlayer(
+        pos,
+        randomColorFromString(id),
+        this.player.location,
+        player?.name,
+        player?.effects,
+        player?.shieldCount || 0
+      );
     });
     const { location, id, name } = this.player;
-    this.canvasManager.drawPlayer(location, randomColorFromString(id), this.player.location, name);
+    this.canvasManager.drawPlayer(
+      location,
+      randomColorFromString(id),
+      this.player.location,
+      name,
+      currentPlayer.effects,
+      currentPlayer.shieldCount || 0
+    );
   };
 
   public checkWin = (): boolean => {
@@ -137,5 +188,53 @@ export default class Game {
     if (hasDirection(cell, Direction.LEFT)) nc = Math.max(tc + MARGIN, nc);
     if (hasDirection(cell, Direction.RIGHT)) nc = Math.min(tc + 1 - MARGIN, nc);
     return { r: nr, c: nc };
+  };
+
+  private getPathToGoal = (): Cord[] => {
+    const start = {
+      r: Math.max(0, Math.min(this.gridSize - 1, Math.floor(this.player.location.r))),
+      c: Math.max(0, Math.min(this.gridSize - 1, Math.floor(this.player.location.c)))
+    };
+    const goal = { r: this.gridSize - 1, c: this.gridSize - 1 };
+    const queue: Array<{ r: number; c: number }> = [start];
+    const visited = new Set<string>([`${start.r},${start.c}`]);
+    const parent = new Map<string, string>();
+
+    while (queue.length) {
+      const current = queue.shift();
+      if (!current) break;
+      if (current.r === goal.r && current.c === goal.c) break;
+
+      const cell = this.maze[current.r][current.c];
+      const nextSteps: Array<{ blocked: Direction; next: { r: number; c: number } }> = [
+        { blocked: Direction.TOP, next: { r: current.r - 1, c: current.c } },
+        { blocked: Direction.RIGHT, next: { r: current.r, c: current.c + 1 } },
+        { blocked: Direction.DOWN, next: { r: current.r + 1, c: current.c } },
+        { blocked: Direction.LEFT, next: { r: current.r, c: current.c - 1 } }
+      ];
+
+      nextSteps.forEach(({ blocked, next }) => {
+        if (hasDirection(cell, blocked)) return;
+        if (next.r < 0 || next.c < 0 || next.r >= this.gridSize || next.c >= this.gridSize) return;
+        const key = `${next.r},${next.c}`;
+        if (visited.has(key)) return;
+        visited.add(key);
+        parent.set(key, `${current.r},${current.c}`);
+        queue.push(next);
+      });
+    }
+
+    const path: Cord[] = [];
+    let key = `${goal.r},${goal.c}`;
+    if (!visited.has(key)) return path;
+
+    while (key) {
+      const [r, c] = key.split(',').map(Number);
+      path.push({ r: r + 0.5, c: c + 0.5 });
+      key = parent.get(key) || '';
+    }
+
+    path.reverse();
+    return path.slice(0, 8);
   };
 }

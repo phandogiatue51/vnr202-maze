@@ -1,5 +1,15 @@
 import { isValidGrid } from './maze-generator';
-import { Direction, Cell, Cord, CanvasOrNull, Ctx, OnUpdate, Gold } from '../type';
+import {
+  Direction,
+  Cell,
+  Cord,
+  CanvasOrNull,
+  Ctx,
+  OnUpdate,
+  Gold,
+  MapItem,
+  PlayerEffects
+} from '../type';
 import { hasDirection, ALL_DIRS_ARR } from './direction-util';
 import {
   BORDER_COLOR,
@@ -12,10 +22,19 @@ import {
   VIEWPORT_SIZE
 } from '../constants';
 import { getContext } from './misc-util';
+import { isEffectActive } from './item-logic';
+import bananaImageUrl from '../assets/banana-01.png';
+import boomImageUrl from '../assets/boom.png';
+import flashImageUrl from '../assets/flash.jpg';
+import torchImageUrl from '../assets/duoc.jpg';
+import shieldImageUrl from '../assets/khien.jpg';
+import netImageUrl from '../assets/luoi.png';
+import smokeImageUrl from '../assets/smoke.png';
 
 const TWO_PI = 2 * Math.PI;
 const DEFAULT_STOKE_WIDTH = 10;
 const PLAYER_STOKE_WIDTH = 4;
+const ITEM_SCALE = 0.72;
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -53,6 +72,8 @@ export default class CanvasManager {
 
   private goldImage: HTMLImageElement | null = null;
 
+  private itemImages: Record<string, HTMLImageElement> = {};
+
   constructor(canvas: CanvasOrNull) {
     this.canvas = canvas;
     const context = getContext(this.canvas);
@@ -61,6 +82,7 @@ export default class CanvasManager {
     this.height = context?.height || 0;
     this.goldImage = new Image();
     this.goldImage.src = '/gold.png';
+    this.itemImages = this.createItemImages();
   }
 
   public refreshContext(): void {
@@ -75,9 +97,9 @@ export default class CanvasManager {
     this.ctx.clearRect(0, 0, this.width, this.height);
   };
 
-  public drawGrid = (grid: Cell[][], playerLoc?: Cord): void => {
+  public drawGrid = (grid: Cell[][], playerLoc?: Cord, viewportSize = VIEWPORT_SIZE): void => {
     if (!grid || !isValidGrid(grid)) throw new Error('Grid not valid');
-    this.initDimension(this.width, this.height);
+    this.initDimension(this.width, this.height, viewportSize);
     this.ctx.clearRect(0, 0, this.width, this.height);
 
     // Set wall drawing style
@@ -86,17 +108,18 @@ export default class CanvasManager {
 
     if (playerLoc) {
       const half = (VIEWPORT_SIZE - 1) / 2;
-      this.offsetR = playerLoc.r - half;
-      this.offsetC = playerLoc.c - half;
+      const dynamicHalf = (viewportSize - 1) / 2;
+      this.offsetR = playerLoc.r - dynamicHalf;
+      this.offsetC = playerLoc.c - dynamicHalf;
     } else {
       this.offsetR = 0;
       this.offsetC = 0;
     }
 
     const rStart = Math.max(0, Math.floor(this.offsetR));
-    const rEnd = Math.min(grid.length - 1, Math.ceil(this.offsetR + VIEWPORT_SIZE));
+    const rEnd = Math.min(grid.length - 1, Math.ceil(this.offsetR + viewportSize));
     const cStart = Math.max(0, Math.floor(this.offsetC));
-    const cEnd = Math.min(grid[0].length - 1, Math.ceil(this.offsetC + VIEWPORT_SIZE));
+    const cEnd = Math.min(grid[0].length - 1, Math.ceil(this.offsetC + viewportSize));
 
     for (let r = rStart; r <= rEnd; r++) {
       for (let c = cStart; c <= cEnd; c++) {
@@ -145,6 +168,48 @@ export default class CanvasManager {
         }
       }
     });
+  };
+
+  public drawMapItems = (items: MapItem[]): void => {
+    items.forEach((item) => {
+      if (item.collectedBy || item.consumedBy) return;
+
+      const image = this.itemImages[item.type];
+      const size = this.cellSize * ITEM_SCALE;
+      const x = this.cCord(item.location.c) - size / 2;
+      const y = this.rCord(item.location.r) - size / 2;
+
+      if (image?.complete && image.naturalWidth !== 0) {
+        this.ctx.drawImage(image, x, y, size, size);
+        return;
+      }
+
+      this.drawItemFallback(item, size);
+    });
+  };
+
+  public drawTorchTrail = (path: Cord[]): void => {
+    if (!path.length) return;
+
+    this.ctx.save();
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
+    this.ctx.strokeStyle = 'rgba(120, 53, 15, 0.9)';
+    this.ctx.lineWidth = Math.max(1.5, this.cellSize * 0.04);
+    this.ctx.font = `bold ${Math.max(12, this.cellSize * 0.22)}px Outfit, Inter, sans-serif`;
+
+    path.forEach((cord, index) => {
+      if (index >= path.length - 1) return;
+      const next = path[index + 1];
+      const arrowText = this.getDirectionalArrowText(cord, next);
+      const x = this.cCord(cord.c);
+      const y = this.rCord(cord.r);
+      this.ctx.strokeText(arrowText, x, y);
+      this.ctx.fillText(arrowText, x, y);
+    });
+
+    this.ctx.restore();
   };
 
   private drawGoldFallback = (cord: Cord): void => {
@@ -215,13 +280,26 @@ export default class CanvasManager {
     cord: Cord,
     color: string = DEFAULT_PLAYER_COLOR,
     playerLoc?: Cord,
-    name?: string
+    name?: string,
+    effects?: PlayerEffects,
+    shieldCount = 0
   ): void => {
     this.ctx.fillStyle = color;
     this.ctx.lineWidth = PLAYER_STOKE_WIDTH;
     this.drawCircle(cord, this.playerRadius);
     this.ctx.fill();
     this.ctx.stroke();
+
+    if (shieldCount > 0 || isEffectActive(effects?.shieldPulseUntil)) {
+      this.ctx.strokeStyle = 'rgba(96, 165, 250, 0.95)';
+      this.ctx.lineWidth = Math.max(3, this.playerRadius * 0.28);
+      this.drawCircle(cord, this.playerRadius + this.cellSize * 0.08);
+      this.ctx.stroke();
+    }
+
+    if (isEffectActive(effects?.rootedUntil)) {
+      this.drawStatusOverlay(cord, 'net');
+    }
 
     if (name) {
       const fontSize = Math.max(10, Math.min(18, this.cellSize * 0.25));
@@ -237,9 +315,9 @@ export default class CanvasManager {
     }
   };
 
-  private initDimension = (width: number, height: number): void => {
+  private initDimension = (width: number, height: number, viewportSize = VIEWPORT_SIZE): void => {
     this.gridSize = Math.min(width, height) - 2 * GRID_PADDING;
-    this.cellSize = this.gridSize / VIEWPORT_SIZE;
+    this.cellSize = this.gridSize / viewportSize;
     this.playerRadius = this.cellSize * PLAYER_RADIUS_TO_CELL_RATIO;
     this.padY = (height - this.gridSize) / 2;
     this.padX = (width - this.gridSize) / 2;
@@ -283,6 +361,73 @@ export default class CanvasManager {
       this.ctx.closePath();
       this.ctx.stroke();
     }
+  };
+
+  private createItemImages = (): Record<string, HTMLImageElement> => {
+    return {
+      banana: this.createImage(bananaImageUrl),
+      boom: this.createImage(boomImageUrl),
+      flash: this.createImage(flashImageUrl),
+      torch: this.createImage(torchImageUrl),
+      shield: this.createImage(shieldImageUrl),
+      net: this.createImage(netImageUrl),
+      smoke: this.createImage(smokeImageUrl)
+    };
+  };
+
+  private createImage = (src: string): HTMLImageElement => {
+    const image = new Image();
+    image.src = src;
+    return image;
+  };
+
+  private drawItemFallback = (item: MapItem, size: number): void => {
+    const x = this.cCord(item.location.c);
+    const y = this.rCord(item.location.r);
+    const palette: Record<string, string> = {
+      banana: '#facc15',
+      boom: '#f97316',
+      flash: '#f8fafc',
+      torch: '#fb7185',
+      shield: '#60a5fa',
+      net: '#38bdf8',
+      smoke: '#94a3b8'
+    };
+
+    this.ctx.fillStyle = palette[item.type] || '#fbbf24';
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, size * 0.34, 0, TWO_PI);
+    this.ctx.fill();
+  };
+
+  private drawStatusOverlay = (cord: Cord, type: 'net'): void => {
+    const image = this.itemImages[type];
+    const size = this.cellSize * 0.92;
+    const x = this.cCord(cord.c) - size / 2;
+    const y = this.rCord(cord.r) - size / 2;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = 0.9;
+    if (image?.complete && image.naturalWidth !== 0) {
+      this.ctx.drawImage(image, x, y, size, size);
+    } else {
+      this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.92)';
+      this.ctx.lineWidth = Math.max(2, this.cellSize * 0.04);
+      this.ctx.beginPath();
+      this.ctx.arc(this.cCord(cord.c), this.rCord(cord.r), this.playerRadius + this.cellSize * 0.18, 0, TWO_PI);
+      this.ctx.stroke();
+    }
+    this.ctx.restore();
+  };
+
+  private getDirectionalArrowText = (from: Cord, to: Cord): string => {
+    const dr = Math.round(to.r - from.r);
+    const dc = Math.round(to.c - from.c);
+
+    if (dc > 0) return '>>>>>';
+    if (dc < 0) return '<<<<<';
+    if (dr > 0) return 'vvvvv';
+    return '^^^^^';
   };
 
   private drawCell = (cell: Cell, cord: Cord): void => {
