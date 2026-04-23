@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import firebase from 'firebase/app';
-import 'firebase/firestore';
+import 'firebase/database';
+import 'firebase/auth';
 import Canvas from '../components/canvas';
 import QuestionModal from '../components/question-modal';
 import Leaderboard from '../components/leaderboard';
@@ -68,19 +69,17 @@ function MultiplayerMaze(): JSX.Element {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
 
-    const unsubscribe = firebase
-      .app()
-      .firestore()
-      .collection('rooms')
-      .doc(roomCode)
-      .onSnapshot((snapshot) => {
-        const status = snapshot.data()?.status || 'waiting';
-        if (status !== 'started') {
-          history.push('/lobby');
-        }
-      });
+    const db = firebase.database();
+    const statusRef = db.ref(`rooms/${roomCode}/status`);
 
-    return () => unsubscribe();
+    const listener = statusRef.on('value', (snapshot: firebase.database.DataSnapshot) => {
+      const status = snapshot.val() || 'waiting';
+      if (status !== 'started') {
+        history.push('/lobby');
+      }
+    });
+
+    return () => statusRef.off('value', listener);
   }, [history]);
 
   const animate: FrameRequestCallback = useCallback(() => {
@@ -94,7 +93,7 @@ function MultiplayerMaze(): JSX.Element {
   useEffect(() => {
     const game = new MultiplayerGame(
       canvasRef.current,
-      (win) => {
+      (win?: boolean) => {
         if (win) {
           setIsFinished(true);
         } else {
@@ -106,11 +105,11 @@ function MultiplayerMaze(): JSX.Element {
         }
       },
       callBack,
-      (gold) => {
+      (gold: Gold) => {
         hitGoldRef.current = gold;
         setHitGold(gold);
       },
-      (goldId, collectedBy) => {
+      (goldId: string, collectedBy: string) => {
         const activeGold = hitGoldRef.current;
         const myPlayerId = gameRef.current?.getMyPlayerId();
 
@@ -123,7 +122,7 @@ function MultiplayerMaze(): JSX.Element {
           }
         }
       },
-      (seconds) => {
+      (seconds: number) => {
         setTimeLeft(seconds);
         if (seconds <= 0) setIsGameOver(true);
       }
@@ -219,7 +218,7 @@ function MultiplayerMaze(): JSX.Element {
             hitGoldRef.current = null;
             setHitGold(null);
           }}
-          onAnswer={async (correct) => {
+          onAnswer={async (correct: boolean) => {
             if (correct) {
               const collected = await gameRef.current?.collectGold(hitGold);
               if (collected) {

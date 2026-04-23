@@ -20,10 +20,10 @@ export type Player = {
   name?: string;
   location: Cord;
   goldCount?: number;
-  finishTime?: number;
+  finishTime?: number | null;
   reachedGoal?: boolean;
   joinedAt?: number;
-  startTime?: number;
+  startTime?: number | null;
 };
 export type RRef<T> = MutableRefObject<T>;
 export type KHandler<T> = KeyboardEventHandler<T>;
