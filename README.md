@@ -37,13 +37,17 @@ Detailed rules can be found in the [RULE.MD](./RULE.MD) file.
 
 ## 📸 Screenshots
 
-![Homepage with game title and buttons](https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b)
+<img width="800" alt="Homepage" src="https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b" />
+*Homepage - Main menu with game title and start button*
 
-![Player lobby with room code](https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233)
+<img width="800" alt="Lobby" src="https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233" />
+*Lobby screen - Create or join a room with a room code*
 
-![In-game maze gameplay](https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869)
+<img width="800" alt="Gameplay" src="https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869" />
+*In-game maze with fog of war and collectible items*
 
-![Leaderboard](https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c)
+<img width="800" alt="Quiz" src="https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c" />
+*Quiz popup - Answer MCQs to collect heritage documents*
 
 ---
 © 2023 - 2026 FPT University Students. For educational purposes only.
