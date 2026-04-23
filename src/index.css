@@ -60,6 +60,7 @@ body {
 }
 
 .maze-stage-inner {
+  position: relative;
   width: min(100%, calc(100vh - 5.75rem));
   aspect-ratio: 1 / 1;
   display: flex;
@@ -125,6 +126,207 @@ body {
   white-space: nowrap;
 }
 
+.combat-panel {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.combat-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.combat-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.combat-panel-header span {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.inventory-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+  padding: 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(251, 191, 36, 0.18);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.92));
+  color: #f8fafc;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.inventory-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(251, 191, 36, 0.42);
+}
+
+.inventory-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.inventory-card-title {
+  font-weight: 700;
+}
+
+.inventory-card-count {
+  color: #fbbf24;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.inventory-card-hint {
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 0.82rem;
+}
+
+.effect-chip-row {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.effect-chip {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  color: #dbeafe;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.effect-chip.muted {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.maze-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  pointer-events: none;
+}
+
+.maze-overlay.smoke {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 75% 35%, rgba(255, 255, 255, 0.1), transparent 24%),
+    radial-gradient(circle at 40% 75%, rgba(255, 255, 255, 0.08), transparent 22%),
+    rgba(71, 85, 105, 0.38);
+  backdrop-filter: blur(12px) saturate(0.8);
+}
+
+.maze-overlay.flash {
+  background: rgba(255, 255, 255, 0.94);
+  animation: flashPulse 0.35s ease-in-out infinite alternate;
+}
+
+.maze-explosion {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.maze-explosion img {
+  width: 42%;
+  max-width: 260px;
+  animation: explodePop 0.9s ease-out forwards;
+  filter: drop-shadow(0 20px 30px rgba(249, 115, 22, 0.45));
+}
+
+.player-target-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1002;
+  backdrop-filter: blur(10px);
+}
+
+.player-target-modal {
+  width: min(100%, 560px);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  padding: 1.25rem;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
+}
+
+.player-target-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.player-target-modal-header h3,
+.player-target-modal-header p {
+  margin: 0;
+}
+
+.player-target-modal-header p {
+  margin-top: 0.35rem;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.player-target-close {
+  padding: 0.6rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+}
+
+.player-target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.player-target-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  background: rgba(15, 23, 42, 0.74);
+  color: #f8fafc;
+  text-align: left;
+}
+
+.player-target-row:hover {
+  border-color: rgba(251, 191, 36, 0.34);
+}
+
 @media (max-width: 1100px) {
   .game-layout {
     grid-template-columns: 1fr;
@@ -162,6 +364,10 @@ body {
   }
 
   .leaderboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-grid {
     grid-template-columns: 1fr;
   }
 
@@ -235,5 +441,32 @@ body {
 
   to {
     opacity: 1;
+  }
+}
+
+@keyframes flashPulse {
+  from {
+    opacity: 0.78;
+  }
+
+  to {
+    opacity: 0.98;
+  }
+}
+
+@keyframes explodePop {
+  0% {
+    transform: scale(0.2) rotate(-10deg);
+    opacity: 0;
+  }
+
+  20% {
+    transform: scale(0.95) rotate(4deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.18) rotate(0deg);
+    opacity: 0;
   }
 }

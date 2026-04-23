@@ -20,6 +20,9 @@ export type Player = {
   name?: string;
   location: Cord;
   goldCount?: number;
+  inventory?: PlayerInventory;
+  effects?: PlayerEffects;
+  shieldCount?: number;
   finishTime?: number | null;
   reachedGoal?: boolean;
   joinedAt?: number;
@@ -43,4 +46,27 @@ export interface Gold {
   location: Cord;
   collectedBy: string | null;
   question: Question;
+}
+
+export type ItemType = 'torch' | 'boom' | 'flash' | 'net' | 'banana' | 'shield' | 'smoke';
+
+export type PlayerInventory = Partial<Record<Exclude<ItemType, 'banana'>, number>>;
+
+export type PlayerEffects = {
+  reversedUntil?: number | null;
+  rootedUntil?: number | null;
+  flashedUntil?: number | null;
+  smokedUntil?: number | null;
+  torchUntil?: number | null;
+  explosionUntil?: number | null;
+  shieldPulseUntil?: number | null;
+};
+
+export interface MapItem {
+  id: string;
+  type: ItemType;
+  location: Cord;
+  trap?: boolean;
+  collectedBy?: string | null;
+  consumedBy?: string | null;
 }
