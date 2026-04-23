@@ -65,6 +65,7 @@ export default class MultiplayerGame {
   private unsubscribeGolds?: () => void;
 
   private unsubscribeItems?: () => void;
+  private unsubscribeRoom?: () => void;
 
   private counter = 0;
 
@@ -75,7 +76,7 @@ export default class MultiplayerGame {
   private players: Map<string, Player> = new Map();
 
   private isEntered = false;
-
+  private isSpectator = false;
   private playerName?: string;
 
   private game!: Game;
@@ -239,6 +240,16 @@ export default class MultiplayerGame {
     this.initNewGame(12345);
   };
 
+  public forceEndMatch = async (): Promise<void> => {
+    if (!this.isFirebaseReady || !this.roomRef) return;
+    const now = Date.now();
+    // Set startedAt to 11 minutes ago to force timeout
+    await this.roomRef.update({
+      startedAt: now - (ROUND_DURATION_SECONDS + 60) * 1000,
+      updatedAt: now
+    });
+  };
+
   public purgePlayers = async (): Promise<void> => {
     if (!this.isFirebaseReady) return;
     await this.getPlayersRef().remove();
@@ -346,13 +357,14 @@ export default class MultiplayerGame {
       : { ok: false, message: 'Không thể áp dụng vật phẩm này.' };
   };
 
-  public enterGame = (name: string): void => {
+  public enterGame = (name: string, isSpectator: boolean = false): void => {
     if (!this.isFirebaseReady) {
       const me = this.game?.getMyPlayer();
       if (me) me.name = name;
       return;
     }
     this.isEntered = true;
+    this.isSpectator = isSpectator;
     this.playerName = name;
     if (this.myUID) {
       this.syncPlayer();
@@ -368,6 +380,9 @@ export default class MultiplayerGame {
     }
     if (this.unsubscribeItems) {
       this.unsubscribeItems();
+    }
+    if (this.unsubscribeRoom) {
+      this.unsubscribeRoom();
     }
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
@@ -437,6 +452,18 @@ export default class MultiplayerGame {
         if (this.onPlayersUpdate) {
           this.onPlayersUpdate(this.getPlayers());
         }
+
+        // Sync timer with room's startedAt
+        const roomTimeListener = (snap: firebase.database.DataSnapshot) => {
+          const startedAt = snap.val();
+          if (startedAt && typeof startedAt === 'number') {
+            this.startTime = startedAt;
+            this.startLocalTimer(startedAt + ROUND_DURATION_SECONDS * 1000);
+          }
+        };
+        const startedAtRef = this.roomRef?.child('startedAt');
+        startedAtRef?.on('value', roomTimeListener);
+        this.unsubscribeRoom = () => startedAtRef?.off('value', roomTimeListener);
       }
     });
   };
@@ -473,7 +500,8 @@ export default class MultiplayerGame {
           startTime: this.startTime,
           finishTime: null,
           connected: true,
-          lastSeen: null
+          lastSeen: null,
+          isSpectator: this.isSpectator
         });
 
         playerRef.onDisconnect().update({

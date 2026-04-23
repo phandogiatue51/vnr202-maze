@@ -1,131 +1,39 @@
-# Multiplayer Maze Web
+# Maze Quest: Heritage Journey - Multiplayer Web Game
 
-![CI Badge](https://github.com/shubymao/multiplayer-maze-web/actions/workflows/test.yml/badge.svg)
+A real-time multiplayer maze game built with React and Firebase, where players compete to solve puzzles and collect heritage documents.
 
-## Motivation
+## 🎓 Academic Project
+This project was developed as part of the curriculum at **FPT University, Vietnam** (Term 2023 - 2026). 
+- **Purpose:** Educational / Non-commercial use only.
+- **Institution:** FPT University (Đại học FPT).
 
-This project was original a school project where student are asked to apply the knowledge they learn in designing a application that uses complex algorithm and data structure. Original variant only have the maze generation aspect with no multiplayer aspect. However, after I first finished the project, I continue investigated into how to integrate this application into a multiplayer game and converted it into a multiplayer game using the Firebase real time database system.
+## 🙏 Credits & Inspiration
+- **Original Creator & Inspiration:** [shubymao](https://github.com/shubymao)
+- This project expands upon the original multiplayer maze concept by integrating educational quiz mechanics and enhanced combat/buff systems.
 
-## Demo
+## 🚀 Features
+- **Real-time Multiplayer:** Sync positions and game state across all players using Firebase Realtime Database.
+- **Educational Mechanics:** Players must answer Multiple Choice Questions (MCQs) to collect items and points.
+- **Combat & Items:**
+    - **Offensive:** Bombs, Flashes, Nets, and Smoke to hinder opponents.
+    - **Defensive:** Shields and Torches to protect yourself and find the path.
+- **Fog of War:** Limited visibility around the player for a challenging exploration experience.
+- **Dynamic Maze Generation:** Procedurally generated mazes using the Recursive Backtracking algorithm.
 
-The demo can be found [here](https://shubymao.github.io/multiplayer-maze-web/)
+## 🛠️ Tech Stack
+- **Frontend:** React, TypeScript, HTML5 Canvas.
+- **Backend:** Firebase Realtime Database, Firebase Authentication (Anonymous).
+- **Styling:** Vanilla CSS, Tailwind CSS.
 
-## Features
+## 🎮 How to Play
+1. **Enter Name:** Choose a name to represent you in the maze.
+2. **Lobby:** Create a room or join an existing one using a room code.
+3. **Explore:** Use WASD or Arrow keys to move.
+4. **Collect:** Find gold documents and answer questions correctly to gain points.
+5. **Win:** Collect the most documents and reach the exit before time runs out!
 
-### Maze Generation
+## 📜 Rules
+Detailed rules can be found in the [RULE.MD](./RULE.MD) file.
 
-- Visualize maze generation
-- Provide variable parameters such as delay, size, and seed
-- Indicator to show the traversal path.
-
-### Offline Mode
-
-- Infinite level generation
-- Increasing difficulty
-- Smooth animation
-- On-screen joystick and keyboard support.
-
-### Online Mode
-
-- Support up to 50 concurrent players.
-- Anonymous authentication (using firebase auth)
-- Real time update of position and game state.
-
-## Technical Details
-
-This is a web project I started in the early 2017 and now ported over to this repo after the recent refactoring to my website. This project offer user a typescript library to generate a NxN seeded-random maze using the recursive back tracking algorithm. Here is a high level overview of the recursive traversal algorithm.
-
-```js
-function depthFirstSearch(cord: Cord): void {
-  const dirs = getDirs();
-  visit(cord);
-  for (const dir of dirs) {
-    const nextCord = getNextCord(cord, dir);
-    if (!isOutOfBound(maze, nextCord) && !isVisited(nextCord)) {
-      breakWall(maze, cord, dir);
-      breakWall(maze, nextCord, getOppositeDir(dir));
-      depthFirstSearchSync(nextCord);
-    }
-  }
-}
-```
-
-## Class and APIs
-
-### `generateMazeSync(size: number, userSeed?: number)`
-
-- Main handler to generate the maze of given size, takes in an optional seed as initializer. Will generate a random seed if not provided.
-
-### `async function generateMaze(size: number, params: Config)`
-
-- Asynchronous version of the generation api. Used to apply delay to visualize the traversal pattern.
-
-### `class Game`
-
-The is the class that handles the game logic and the rendering of the game.
-
-- `constructor(canvas: Canvas, level: number, seed?: number, pid?: string)`
-
-    - constructor of the game class.
-
-- `getMaze():Cell[][]`
-
-    - get the underlying maze object.
-
-- `getMyPlayer():Player`
-
-    - get my player object
-
-- `setOpponentsPos(positions: Map<string, Cord>): void`
-
-  - set the opponents positions.
-
-- `performMove(control: Control): void`
-
-  - perform the move based on control object provided.
-
-- `renderGame(): void`
-
-  - render the game with the maze and players.
-
-- `checkWin(): boolean`
-
-  - check if my player reach the end.
-
-### `class Multiplayer`
-
-This is the class that over see the database listener and update the game value accordingly.
-
-- `constructor(canvas: Canvas, onGameOver?: CallBack, callBack?: CallBack)`
-
-  - constructor of the multiplayer game.
-
-- `performMove(control: Control): void`
-
-  - perform the move based on control object provided.
-
-- `render(): void`
-
-  - render the game on the canvas provided in the constructor.
-
-- `cleanUp(): void`
-
-  - remove all listener and remove my player from the database.
-
-## Gallery
-
-### Generated Maze
-
-<img src="https://github.com/shubymao/multiplayer-maze-web/blob/main/public/generation.png?raw=true" width="300" />
-
-### During Generation
-
-<img src="https://github.com/shubymao/multiplayer-maze-web/blob/main/public/generate-indcator.png?raw=true" width="300" />
-
-### Offline Gameplay
-
-<img src="https://github.com/shubymao/multiplayer-maze-web/blob/main/public/offline-gameplay.png?raw=true" width="300" />
-
-### Online Gameplay
-
-<img src="https://github.com/shubymao/multiplayer-maze-web/blob/main/public/online-gameplay.png?raw=true" width="300" />
+---
+© 2023 - 2026 FPT University Students. For educational purposes only.

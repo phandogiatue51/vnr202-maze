@@ -29,6 +29,7 @@ export type Player = {
   startTime?: number | null;
   connected?: boolean;
   lastSeen?: number | null;
+  isSpectator?: boolean;
 };
 export type RRef<T> = MutableRefObject<T>;
 export type KHandler<T> = KeyboardEventHandler<T>;

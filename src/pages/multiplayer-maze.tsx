@@ -99,6 +99,7 @@ function MultiplayerMaze(): JSX.Element {
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
   const myPlayerId = gameRef.current?.getMyPlayerId();
+  const isHost = useMemo(() => localStorage.getItem('isHost') === 'true', []);
 
   const myPlayer = useMemo(
     () => allPlayers.find((player) => player.id === myPlayerId),
@@ -191,9 +192,6 @@ function MultiplayerMaze(): JSX.Element {
         if (win) {
           setIsFinished(true);
         } else {
-          if (localStorage.getItem('playerName')) {
-            toast.error('Trận đấu đã kết thúc. Hãy xem bảng xếp hạng.', TOAST_CONFIG);
-          }
           setIsGameOver(true);
         }
       },
@@ -228,7 +226,7 @@ function MultiplayerMaze(): JSX.Element {
     gameRef.current = game;
     const playerName = localStorage.getItem('playerName');
     if (playerName) {
-      game.enterGame(playerName);
+      game.enterGame(playerName, isHost);
     }
 
     createOnLeave(() => {
@@ -392,98 +390,138 @@ function MultiplayerMaze(): JSX.Element {
 
   return (
     <>
-      <div className="game-layout">
-        <div className="maze-container-wrapper">
-          <div
-            tabIndex={0}
-            role="button"
-            onKeyDown={onKey}
-            onKeyUp={offKey}
-            className="maze-stage"
-            aria-label="Maze game area"
-          >
-            <div className="maze-stage-inner">
-              <Canvas ref={canvasRef} size={canvasSize} className="maze-canvas" />
-              {isEffectActive(myEffects.smokedUntil, effectNow) && <div className="maze-overlay smoke" />}
-              {isEffectActive(myEffects.flashedUntil, effectNow) && <div className="maze-overlay flash" />}
-              {isEffectActive(myEffects.explosionUntil, effectNow) && (
-                <div className="maze-explosion">
-                  <img src={explosionImageUrl} alt="Explosion effect" />
+      <div className={`game-layout ${isHost ? 'is-host-view' : ''}`}>
+        {isHost ? (
+          <div className="spectator-main-view">
+            <div className="spectator-header">
+              <div className="leaderboard-stat-pill">
+                <span className="leaderboard-stat-label">Thời gian trận đấu</span>
+                <span className="leaderboard-stat-value">{formatTime(timeLeft)}</span>
+              </div>
+              <h2 className="spectator-title">Chế độ Giám sát (Host)</h2>
+              <button
+                type="button"
+                className="menu-btn btn-danger-soft spectator-end-btn"
+                onClick={() => {
+                  if (window.confirm('Bạn có chắc chắn muốn kết thúc trận đấu ngay lập tức?')) {
+                    gameRef.current?.forceEndMatch();
+                  }
+                }}
+              >
+                Kết thúc trận đấu
+              </button>
+            </div>
+            <div className="spectator-leaderboard-wrap">
+              <Leaderboard
+                players={allPlayers}
+                title="Bảng xếp hạng trực tiếp"
+                variant="live"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="maze-container-wrapper">
+              <div
+                tabIndex={0}
+                role="button"
+                onKeyDown={onKey}
+                onKeyUp={offKey}
+                className="maze-stage"
+                aria-label="Maze game area"
+              >
+                <div className="maze-stage-inner">
+                  <Canvas ref={canvasRef} size={canvasSize} className="maze-canvas" />
+                  {isEffectActive(myEffects.smokedUntil, effectNow) && (
+                    <div className="maze-overlay smoke" />
+                  )}
+                  {isEffectActive(myEffects.flashedUntil, effectNow) && (
+                    <div className="maze-overlay flash" />
+                  )}
+                  {isEffectActive(myEffects.explosionUntil, effectNow) && (
+                    <div className="maze-explosion">
+                      <img src={explosionImageUrl} alt="Explosion effect" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="live-leaderboard-wrapper">
-          <div className="leaderboard-stats">
-            <div className="leaderboard-stat-pill">
-              <span className="leaderboard-stat-label">Thời gian còn lại</span>
-              <span className="leaderboard-stat-value">{formatTime(timeLeft)}</span>
-            </div>
-            <div className="leaderboard-stat-pill">
-              <span className="leaderboard-stat-label">Tài liệu</span>
-              <span className="leaderboard-stat-value">{collectedCount}</span>
-            </div>
-          </div>
-
-          <div className="combat-panel">
-            <div className="combat-panel-header">
-              <h3>Vật phẩm và trạng thái</h3>
-              <span>Khiên: {shieldCount}</span>
+              </div>
             </div>
 
-            <div className="inventory-grid">
-              {(
-                ['torch', 'shield', 'boom', 'flash', 'net', 'smoke'] as Array<
-                  Exclude<ItemType, 'banana'>
-                >
-              ).map((itemType) => {
-                const count = myInventory[itemType] || 0;
-                const isInstant = itemType === 'torch' || itemType === 'shield';
-                return (
-                  <button
-                    key={itemType}
-                    type="button"
-                    className="inventory-card"
-                    disabled={count <= 0}
-                    onClick={() =>
-                      isInstant
-                        ? useInstantItem(itemType as 'torch' | 'shield')
-                        : openTargetModal(itemType as 'boom' | 'flash' | 'net' | 'smoke')
-                    }
-                  >
-                    <span className="inventory-card-title">{INVENTORY_LABELS[itemType]}</span>
-                    <span className="inventory-card-count">x{count}</span>
-                    <span className="inventory-card-hint">
-                      {isInstant ? 'Tự kích hoạt khi nhặt' : 'Chọn mục tiêu'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <div className="live-stats-wrapper">
+              <div className="leaderboard-stats">
+                <div className="leaderboard-stat-pill">
+                  <span className="leaderboard-stat-label">Thời gian còn lại</span>
+                  <span className="leaderboard-stat-value">{formatTime(timeLeft)}</span>
+                </div>
+                <div className="leaderboard-stat-pill">
+                  <span className="leaderboard-stat-label">Tài liệu</span>
+                  <span className="leaderboard-stat-value">{collectedCount}</span>
+                </div>
+              </div>
 
-            <div className="effect-chip-row">
-              {activeEffects.length > 0 ? (
-                activeEffects.map((effect) => (
-                  <span key={effect} className="effect-chip">
-                    {effect}
-                  </span>
-                ))
-              ) : (
-                <span className="effect-chip bg-slate-100">Không có hiệu ứng đang chạy</span>
-              )}
+              <div className="combat-panel">
+                <div className="combat-panel-header">
+                  <h3>Vật phẩm và trạng thái</h3>
+                  <span>Khiên: {shieldCount}</span>
+                </div>
+
+                <div className="inventory-grid">
+                  {(
+                    ['torch', 'shield', 'boom', 'flash', 'net', 'smoke'] as Array<
+                      Exclude<ItemType, 'banana'>
+                    >
+                  ).map((itemType) => {
+                    const count = myInventory[itemType] || 0;
+                    const isInstant = itemType === 'torch' || itemType === 'shield';
+                    return (
+                      <button
+                        key={itemType}
+                        type="button"
+                        className="inventory-card"
+                        disabled={count <= 0}
+                        onClick={() =>
+                          isInstant
+                            ? useInstantItem(itemType as 'torch' | 'shield')
+                            : openTargetModal(itemType as 'boom' | 'flash' | 'net' | 'smoke')
+                        }
+                      >
+                        <span className="inventory-card-title">{INVENTORY_LABELS[itemType]}</span>
+                        <span className="inventory-card-count">x{count}</span>
+                        <span className="inventory-card-hint">
+                          {isInstant ? 'Tự kích hoạt khi nhặt' : 'Chọn mục tiêu'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="effect-chip-row">
+                  {activeEffects.length > 0 ? (
+                    activeEffects.map((effect) => (
+                      <span key={effect} className="effect-chip">
+                        {effect}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="effect-chip">Không có hiệu ứng</span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {activeEffectPopup && (
         <div className="effect-notice-layer" aria-live="polite">
           <div className="effect-notice-card">
-            <img src={activeEffectPopup.image} alt={activeEffectPopup.title} className="effect-notice-image" />
-            <h3>{activeEffectPopup.title}</h3>
-            <p>{activeEffectPopup.message}</p>
+            <img
+              src={activeEffectPopup?.image}
+              alt={activeEffectPopup?.title}
+              className="effect-notice-image"
+            />
+            <h3>{activeEffectPopup?.title}</h3>
+            <p>{activeEffectPopup?.message}</p>
           </div>
         </div>
       )}
@@ -519,7 +557,10 @@ function MultiplayerMaze(): JSX.Element {
             <div className="player-target-modal-header">
               <div>
                 <h3>Chọn người chơi</h3>
-                <p>Dùng {TARGET_ITEM_LABELS[selectedAction]} lên người chơi chưa về đích.</p>
+                <p>
+                  Dùng {TARGET_ITEM_LABELS[selectedAction as keyof typeof TARGET_ITEM_LABELS]} lên
+                  người chơi chưa về đích.
+                </p>
               </div>
               <button
                 type="button"
@@ -534,7 +575,7 @@ function MultiplayerMaze(): JSX.Element {
             </div>
 
             <div className="player-target-list">
-              {targetPlayers.map((player) => (
+              {targetPlayers.map((player: Player) => (
                 <button
                   key={player.id}
                   type="button"

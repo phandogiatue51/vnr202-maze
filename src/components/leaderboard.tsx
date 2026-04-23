@@ -39,7 +39,9 @@ const comparePlayers = (a: Player, b: Player): number => {
 };
 
 const buildRankedPlayers = (players: Player[], variant: 'live' | 'result'): RankedPlayer[] => {
-  const sortedPlayers = [...players].sort(comparePlayers);
+  const sortedPlayers = [...players]
+    .filter((p) => !p.isSpectator)
+    .sort(comparePlayers);
 
   if (variant !== 'result' || sortedPlayers.length === 0) {
     return sortedPlayers.map((player, index) => ({ player, rank: index + 1 }));
