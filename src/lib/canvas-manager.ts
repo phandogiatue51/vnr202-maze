@@ -189,24 +189,34 @@ export default class CanvasManager {
   };
 
   public drawTorchTrail = (path: Cord[]): void => {
-    if (!path.length) return;
+    if (path.length < 2) return;
 
     this.ctx.save();
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
-    this.ctx.strokeStyle = 'rgba(120, 53, 15, 0.9)';
-    this.ctx.lineWidth = Math.max(1.5, this.cellSize * 0.04);
-    this.ctx.font = `bold ${Math.max(12, this.cellSize * 0.22)}px Outfit, Inter, sans-serif`;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.strokeStyle = 'rgba(250, 204, 21, 0.96)';
+    this.ctx.lineWidth = Math.max(4, this.cellSize * 0.12);
+    this.ctx.shadowColor = 'rgba(250, 204, 21, 0.45)';
+    this.ctx.shadowBlur = Math.max(10, this.cellSize * 0.24);
 
-    path.forEach((cord, index) => {
-      if (index >= path.length - 1) return;
-      const next = path[index + 1];
-      const arrowText = this.getDirectionalArrowText(cord, next);
-      const x = this.cCord(cord.c);
-      const y = this.rCord(cord.r);
-      this.ctx.strokeText(arrowText, x, y);
-      this.ctx.fillText(arrowText, x, y);
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.cCord(path[0].c), this.rCord(path[0].r));
+    path.slice(1).forEach((cord) => {
+      this.ctx.lineTo(this.cCord(cord.c), this.rCord(cord.r));
+    });
+    this.ctx.stroke();
+
+    this.ctx.fillStyle = 'rgba(254, 240, 138, 0.95)';
+    path.slice(1).forEach((cord) => {
+      this.ctx.beginPath();
+      this.ctx.arc(
+        this.cCord(cord.c),
+        this.rCord(cord.r),
+        Math.max(2.5, this.cellSize * 0.08),
+        0,
+        TWO_PI
+      );
+      this.ctx.fill();
     });
 
     this.ctx.restore();
@@ -418,16 +428,6 @@ export default class CanvasManager {
       this.ctx.stroke();
     }
     this.ctx.restore();
-  };
-
-  private getDirectionalArrowText = (from: Cord, to: Cord): string => {
-    const dr = Math.round(to.r - from.r);
-    const dc = Math.round(to.c - from.c);
-
-    if (dc > 0) return '>>>>>';
-    if (dc < 0) return '<<<<<';
-    if (dr > 0) return 'vvvvv';
-    return '^^^^^';
   };
 
   private drawCell = (cell: Cell, cord: Cord): void => {

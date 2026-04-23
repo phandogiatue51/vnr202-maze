@@ -27,6 +27,8 @@ export type Player = {
   reachedGoal?: boolean;
   joinedAt?: number;
   startTime?: number | null;
+  connected?: boolean;
+  lastSeen?: number | null;
 };
 export type RRef<T> = MutableRefObject<T>;
 export type KHandler<T> = KeyboardEventHandler<T>;
