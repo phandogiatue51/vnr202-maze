@@ -35,5 +35,11 @@ This project was developed as part of the curriculum at **FPT University, Vietna
 ## 📜 Rules
 Detailed rules can be found in the [RULE.MD](./RULE.MD) file.
 
+## Images
+<img width="1893" alt="Game homepage with title and start button" height="856" src="https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c" />
+<img width="1910" alt="Player lobby showing room code and waiting for players" height="857" src="https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869" />
+<img width="1876" alt="In-game maze gameplay with fog of war and collectible items" height="860" src="https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233" />
+<img width="1898" alt="Leaderboard" height="859" src="https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b" />
+
 ---
 © 2023 - 2026 FPT University Students. For educational purposes only.
