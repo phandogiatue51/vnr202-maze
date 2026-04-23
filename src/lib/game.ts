@@ -1,7 +1,7 @@
 import CanvasManager from './canvas-manager';
 import { generateMazeSync } from './maze-generator';
-import { Cell, Cord, Direction, CanvasOrNull, Control, Player, Gold } from '../type';
-import { generateGold, checkGoldCollision } from './gold-logic';
+import { Cell, Cord, Direction, CanvasOrNull, Control, Player, Gold, GameItem, ItemType } from '../type';
+import { generateGold, checkGoldCollision, generateItems, checkItemCollision } from './gold-logic';
 import { hasDirection } from './direction-util';
 import { generatePlayer, randomColorFromString } from './misc-util';
 import {
@@ -28,18 +28,25 @@ export default class Game {
 
   private goldItems: Gold[];
 
+  private gameItems: GameItem[];
+
   private playersMap?: Map<string, Player>;
 
   private onGoldHit?: (gold: Gold) => void;
 
+  private onItemHit?: (item: GameItem) => void;
+
   private activeGoldCollisionId?: string;
+
+  private activeItemCollisionId?: string;
 
   constructor(
     canvas: CanvasOrNull,
     level: number,
     seed?: number,
     pid?: string,
-    onGoldHit?: (gold: Gold) => void
+    onGoldHit?: (gold: Gold) => void,
+    onItemHit?: (item: GameItem) => void
   ) {
     this.seed = seed || MAZE_SEED;
     this.level = level;
@@ -48,7 +55,9 @@ export default class Game {
     this.maze = generateMazeSync(this.gridSize, this.seed);
     this.canvasManager = new CanvasManager(canvas);
     this.goldItems = generateGold(this.gridSize, this.seed);
+    this.gameItems = generateItems(this.gridSize, this.seed);
     this.onGoldHit = onGoldHit;
+    this.onItemHit = onItemHit;
   }
 
   public getMaze = (): Cell[][] => {
@@ -61,6 +70,10 @@ export default class Game {
 
   public getGoldItems = (): Gold[] => {
     return this.goldItems;
+  };
+
+  public getGameItems = (): GameItem[] => {
+    return this.gameItems;
   };
 
   public getCanvasManager = (): CanvasManager => {
@@ -79,8 +92,19 @@ export default class Game {
     this.goldItems = golds;
   };
 
+  public setGameItems = (items: GameItem[]): void => {
+    this.gameItems = items;
+  };
+
   public setPlayersMap = (players: Map<string, Player>): void => {
     this.playersMap = players;
+    // Sync local player's debuffs from remote state
+    if (this.player.id) {
+      const remotePlayer = players.get(this.player.id);
+      if (remotePlayer) {
+        this.player.activeDebuffs = remotePlayer.activeDebuffs || [];
+      }
+    }
   };
 
   public setCanvas = (canvas: CanvasOrNull): void => {
@@ -89,6 +113,15 @@ export default class Game {
 
   public performMove = (control: Control): void => {
     const { magnitude, angle } = control;
+
+    // Check if player is netted
+    const now = Date.now();
+    const isNetted = this.player.activeDebuffs?.some(
+      (d) => d.type === ItemType.NET && now >= d.startTime && now <= d.endTime
+    );
+
+    if (isNetted) return;
+
     let nr = this.player.location.r;
     let nc = this.player.location.c;
     nr += -MAX_SPEED * magnitude * Math.sin(angle);
@@ -96,15 +129,23 @@ export default class Game {
     this.player.location = this.getBoundedCord(nr, nc);
 
     const hitGold = checkGoldCollision(this.player.location, this.goldItems, MARGIN);
-    if (!hitGold) {
+    if (hitGold) {
+      if (hitGold.id !== this.activeGoldCollisionId && this.onGoldHit) {
+        this.activeGoldCollisionId = hitGold.id;
+        this.onGoldHit(hitGold);
+      }
+    } else {
       this.activeGoldCollisionId = undefined;
-      return;
     }
 
-    // Trigger gold question only once per continuous collision.
-    if (hitGold.id !== this.activeGoldCollisionId && this.onGoldHit) {
-      this.activeGoldCollisionId = hitGold.id;
-      this.onGoldHit(hitGold);
+    const hitItem = checkItemCollision(this.player.location, this.gameItems, MARGIN);
+    if (hitItem) {
+      if (hitItem.id !== this.activeItemCollisionId && this.onItemHit) {
+        this.activeItemCollisionId = hitItem.id;
+        this.onItemHit(hitItem);
+      }
+    } else {
+      this.activeItemCollisionId = undefined;
     }
   };
 
@@ -113,13 +154,26 @@ export default class Game {
     this.canvasManager.refreshContext();
     this.canvasManager.drawGrid(this.maze, this.player.location);
     this.canvasManager.drawGolds(this.goldItems);
+    this.canvasManager.drawItems(this.gameItems);
     this.canvasManager.drawStartFinish(this.maze);
     this.opPositions?.forEach((pos, id) => {
-      const name = this.playersMap?.get(id)?.name;
-      this.canvasManager.drawPlayer(pos, randomColorFromString(id), this.player.location, name);
+      const p = this.playersMap?.get(id);
+      this.canvasManager.drawPlayer(
+        pos,
+        randomColorFromString(id),
+        this.player.location,
+        p?.name,
+        p?.activeDebuffs
+      );
     });
-    const { location, id, name } = this.player;
-    this.canvasManager.drawPlayer(location, randomColorFromString(id), this.player.location, name);
+    const { location, id, name, activeDebuffs } = this.player;
+    this.canvasManager.drawPlayer(
+      location,
+      randomColorFromString(id),
+      this.player.location,
+      name,
+      activeDebuffs
+    );
   };
 
   public checkWin = (): boolean => {

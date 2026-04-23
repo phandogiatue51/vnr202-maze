@@ -1,5 +1,5 @@
 import { isValidGrid } from './maze-generator';
-import { Direction, Cell, Cord, CanvasOrNull, Ctx, OnUpdate, Gold } from '../type';
+import { Direction, Cell, Cord, CanvasOrNull, Ctx, OnUpdate, Gold, GameItem, ItemType, Debuff } from '../type';
 import { hasDirection, ALL_DIRS_ARR } from './direction-util';
 import {
   BORDER_COLOR,
@@ -52,6 +52,9 @@ export default class CanvasManager {
   private offsetC = 0;
 
   private goldImage: HTMLImageElement | null = null;
+  private smokeBombImage: HTMLImageElement | null = null;
+  private netImage: HTMLImageElement | null = null;
+  private smokeEffectImage: HTMLImageElement | null = null;
 
   constructor(canvas: CanvasOrNull) {
     this.canvas = canvas;
@@ -61,6 +64,12 @@ export default class CanvasManager {
     this.height = context?.height || 0;
     this.goldImage = new Image();
     this.goldImage.src = '/gold.png';
+    this.smokeBombImage = new Image();
+    this.smokeBombImage.src = '/smoke-bomb.png';
+    this.netImage = new Image();
+    this.netImage.src = '/net.png';
+    this.smokeEffectImage = new Image();
+    this.smokeEffectImage.src = '/smoke-effect.png';
   }
 
   public refreshContext(): void {
@@ -147,6 +156,26 @@ export default class CanvasManager {
     });
   };
 
+  public drawItems = (items: GameItem[]): void => {
+    items.forEach((item) => {
+      if (item.collectedBy) return;
+
+      let img: HTMLImageElement | null = null;
+      if (item.type === ItemType.SMOKE_BOMB) img = this.smokeBombImage;
+      else if (item.type === ItemType.NET) img = this.netImage;
+
+      if (img && img.complete && img.naturalWidth !== 0) {
+        this.ctx.drawImage(
+          img,
+          this.cCord(item.location.c - 0.4),
+          this.rCord(item.location.r - 0.4),
+          this.cellSize * 0.8,
+          this.cellSize * 0.8
+        );
+      }
+    });
+  };
+
   private drawGoldFallback = (cord: Cord): void => {
     const x = this.cCord(cord.c);
     const y = this.rCord(cord.r);
@@ -215,13 +244,36 @@ export default class CanvasManager {
     cord: Cord,
     color: string = DEFAULT_PLAYER_COLOR,
     playerLoc?: Cord,
-    name?: string
+    name?: string,
+    debuffs?: Debuff[]
   ): void => {
     this.ctx.fillStyle = color;
     this.ctx.lineWidth = PLAYER_STOKE_WIDTH;
     this.drawCircle(cord, this.playerRadius);
     this.ctx.fill();
     this.ctx.stroke();
+
+    // Draw active debuffs
+    if (debuffs && debuffs.length > 0) {
+      const now = Date.now();
+      debuffs.forEach((debuff) => {
+        if (now >= debuff.startTime && now <= debuff.endTime) {
+          let effectImg: HTMLImageElement | null = null;
+          if (debuff.type === ItemType.SMOKE_BOMB) effectImg = this.smokeEffectImage;
+          else if (debuff.type === ItemType.NET) effectImg = this.netImage;
+
+          if (effectImg && effectImg.complete && effectImg.naturalWidth !== 0) {
+            this.ctx.drawImage(
+              effectImg,
+              this.cCord(cord.c - 0.5),
+              this.rCord(cord.r - 0.5),
+              this.cellSize,
+              this.cellSize
+            );
+          }
+        }
+      });
+    }
 
     if (name) {
       const fontSize = Math.max(10, Math.min(18, this.cellSize * 0.25));

@@ -7,10 +7,10 @@ import 'firebase/auth';
 import Canvas from '../components/canvas';
 import QuestionModal from '../components/question-modal';
 import Leaderboard from '../components/leaderboard';
-import { FIREBASE_CONFIG, IDLE_CONTROL, TOAST_CONFIG } from '../constants';
+import { FIREBASE_CONFIG, IDLE_CONTROL, TOAST_CONFIG, ASSETS } from '../constants';
 import { getOnKey, getOffKey } from '../lib/misc-util';
 import MultiplayerGame from '../lib/multiplayer-game';
-import { CallBack, Control, Gold, Player } from '../type';
+import { CallBack, Control, Gold, Player, ItemType, Debuff } from '../type';
 
 const callBack: CallBack = (success, msg) => {
   if (success) toast.success(msg, TOAST_CONFIG);
@@ -52,7 +52,10 @@ function MultiplayerMaze(): JSX.Element {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [collectedCount, setCollectedCount] = useState(0);
+  const [selectedTool, setSelectedTool] = useState<ItemType | null>(null);
+  const [myPlayer, setMyPlayer] = useState<Player | null>(null);
   const hitGoldRef = useRef<Gold | null>(null);
+  const lastDebuffsRef = useRef<Debuff[]>([]);
 
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
@@ -91,9 +94,9 @@ function MultiplayerMaze(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const game = new MultiplayerGame(
-      canvasRef.current,
-      (win?: boolean) => {
+    const game = new MultiplayerGame({
+      canvas: canvasRef.current,
+      onGameOver: (win?: boolean) => {
         if (win) {
           setIsFinished(true);
         } else {
@@ -105,11 +108,11 @@ function MultiplayerMaze(): JSX.Element {
         }
       },
       callBack,
-      (gold: Gold) => {
+      onGoldHit: (gold: Gold) => {
         hitGoldRef.current = gold;
         setHitGold(gold);
       },
-      (goldId: string, collectedBy: string) => {
+      onGoldCollected: (goldId: string, collectedBy: string) => {
         const activeGold = hitGoldRef.current;
         const myPlayerId = gameRef.current?.getMyPlayerId();
 
@@ -122,11 +125,11 @@ function MultiplayerMaze(): JSX.Element {
           }
         }
       },
-      (seconds: number) => {
+      onTimerUpdate: (seconds: number) => {
         setTimeLeft(seconds);
         if (seconds <= 0) setIsGameOver(true);
       }
-    );
+    });
 
     gameRef.current = game;
     const playerName = localStorage.getItem('playerName');
@@ -136,9 +139,23 @@ function MultiplayerMaze(): JSX.Element {
 
     const interval = setInterval(() => {
       if (gameRef.current) {
-        setAllPlayers(gameRef.current.getPlayers());
+        const players = gameRef.current.getPlayers();
+        setAllPlayers(players);
+
+        const me = players.find((p) => p.id === gameRef.current?.getMyPlayerId());
+        if (me) {
+          setMyPlayer(me);
+          // Check for new debuffs
+          const newDebuffs = me.activeDebuffs || [];
+          if (newDebuffs.length > lastDebuffsRef.current.length) {
+            const latest = newDebuffs[newDebuffs.length - 1];
+            const itemName = latest.type === ItemType.SMOKE_BOMB ? 'bom khói' : 'lưới';
+            toast.warn(`Bạn bị dính ${itemName} từ ${latest.attackerName}!`, TOAST_CONFIG);
+          }
+          lastDebuffsRef.current = newDebuffs;
+        }
       }
-    }, 1000);
+    }, 500);
 
     createOnLeave(() => {
       clearInterval(interval);
@@ -172,9 +189,28 @@ function MultiplayerMaze(): JSX.Element {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleUseTool = async (targetId: string) => {
+    if (!selectedTool || !gameRef.current) return;
+
+    const target = allPlayers.find((p) => p.id === targetId);
+    const success = await gameRef.current.useItem(selectedTool, targetId);
+
+    if (success) {
+      const itemName = selectedTool === ItemType.SMOKE_BOMB ? 'bom khói' : 'lưới';
+      toast.success(`Đã sử dụng ${itemName} lên ${target?.name || 'người chơi'}!`, TOAST_CONFIG);
+      setSelectedTool(null);
+    } else {
+      toast.error('Không thể sử dụng công cụ.', TOAST_CONFIG);
+    }
+  };
+
+  const isSmoked = myPlayer?.activeDebuffs?.some(
+    (d) => d.type === ItemType.SMOKE_BOMB && Date.now() >= d.startTime && Date.now() <= d.endTime
+  );
+
   return (
     <>
-      <div className="game-layout">
+      <div className={`game-layout ${isSmoked ? 'is-smoked' : ''}`}>
         <div className="maze-container-wrapper">
           <div
             tabIndex={0}
@@ -202,11 +238,46 @@ function MultiplayerMaze(): JSX.Element {
             </div>
           </div>
 
+          <div className="inventory-container">
+            <h4 className="inventory-title">Túi đồ của bạn</h4>
+            <div className="inventory-grid">
+              <button
+                className={`inventory-item ${selectedTool === ItemType.SMOKE_BOMB ? 'selected' : ''} ${
+                  (myPlayer?.inventory?.smokeBombs || 0) === 0 ? 'empty' : ''
+                }`}
+                onClick={() =>
+                  (myPlayer?.inventory?.smokeBombs || 0) > 0 &&
+                  setSelectedTool(selectedTool === ItemType.SMOKE_BOMB ? null : ItemType.SMOKE_BOMB)
+                }
+              >
+                <img src={ASSETS.SMOKE_BOMB} alt="Smoke Bomb" />
+                <span className="item-count">{myPlayer?.inventory?.smokeBombs || 0}</span>
+              </button>
+              <button
+                className={`inventory-item ${selectedTool === ItemType.NET ? 'selected' : ''} ${
+                  (myPlayer?.inventory?.nets || 0) === 0 ? 'empty' : ''
+                }`}
+                onClick={() =>
+                  (myPlayer?.inventory?.nets || 0) > 0 &&
+                  setSelectedTool(selectedTool === ItemType.NET ? null : ItemType.NET)
+                }
+              >
+                <img src={ASSETS.NET} alt="Net" />
+                <span className="item-count">{myPlayer?.inventory?.nets || 0}</span>
+              </button>
+            </div>
+            {selectedTool && (
+              <p className="inventory-hint">Hãy chọn một người chơi trên bảng xếp hạng để tấn công!</p>
+            )}
+          </div>
+
           <Leaderboard
             players={allPlayers}
             title="Bảng xếp hạng trực tiếp"
             myUID={gameRef.current?.getMyPlayerId()}
             variant="live"
+            onChoosePlayer={handleUseTool}
+            canChoose={!!selectedTool}
           />
         </div>
       </div>

@@ -59,3 +59,10 @@ export const DEFAULT_PLAYER_COLOR = '#FBBF24';
 export const MAZE_SIZE = 56;
 export const MAZE_SEED = 12345;
 export const VIEWPORT_SIZE = 3;
+
+export const DEBUFF_DURATION = 5000; // 5 seconds
+export const ASSETS = {
+  SMOKE_BOMB: '/smoke-bomb.png',
+  SMOKE_EFFECT: '/smoke-effect.png',
+  NET: '/net.png'
+};

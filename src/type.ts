@@ -15,6 +15,25 @@ export type Config = { userSeed?: number; onUpdate?: OnUpdate };
 export type CanvasOrNull = HTMLCanvasElement | null;
 export type Ctx = CanvasRenderingContext2D;
 export type Control = { magnitude: number; angle: number };
+export enum ItemType {
+  SMOKE_BOMB = 'smoke_bomb',
+  NET = 'net'
+}
+
+export interface GameItem {
+  id: string;
+  type: ItemType;
+  location: Cord;
+  collectedBy: string | null;
+}
+
+export interface Debuff {
+  type: ItemType;
+  startTime: number;
+  endTime: number;
+  attackerName: string;
+}
+
 export type Player = {
   id: string;
   name?: string;
@@ -24,6 +43,11 @@ export type Player = {
   reachedGoal?: boolean;
   joinedAt?: number;
   startTime?: number | null;
+  inventory?: {
+    smokeBombs: number;
+    nets: number;
+  };
+  activeDebuffs?: Debuff[];
 };
 export type RRef<T> = MutableRefObject<T>;
 export type KHandler<T> = KeyboardEventHandler<T>;
@@ -44,3 +68,4 @@ export interface Gold {
   collectedBy: string | null;
   question: Question;
 }
+

@@ -2,9 +2,10 @@ import firebase from 'firebase/app';
 import 'firebase/database';
 import 'firebase/auth';
 import { FIREBASE_CONFIG, MAZE_SIZE } from '../constants';
-import { CallBack, CanvasOrNull, Control, Cord, Player, Gold } from '../type';
+import { CallBack, CanvasOrNull, Control, Cord, Player, Gold, GameItem, ItemType, Debuff } from '../type';
 import Game from './game';
-import { generateGold } from './gold-logic';
+import { generateGold, generateItems } from './gold-logic';
+import { DEBUFF_DURATION } from '../constants';
 
 const REFRESH_THRESHOLD = 3;
 const ROUND_DURATION_SECONDS = 600;
@@ -12,6 +13,19 @@ const ROUND_DURATION_SECONDS = 600;
 type Auth = firebase.auth.Auth;
 type Database = firebase.database.Database;
 type Reference = firebase.database.Reference;
+
+export interface MultiplayerGameOptions {
+  canvas: CanvasOrNull;
+  onGameOver?: (win?: boolean) => void;
+  callBack?: CallBack;
+  onGoldHit?: (gold: Gold) => void;
+  onGoldCollected?: (goldId: string, collectedBy: string) => void;
+  onTimerUpdate?: (secondsLeft: number) => void;
+  onStatusUpdate?: (status: 'waiting' | 'started') => void;
+  onPlayersUpdate?: (players: Player[]) => void;
+  onItemCollected?: (itemId: string, collectedBy: string) => void;
+  onItemHit?: (item: GameItem) => void;
+}
 
 export default class MultiplayerGame {
   private isWinner: boolean;
@@ -26,9 +40,13 @@ export default class MultiplayerGame {
 
   private unsubscribeGolds?: () => void;
 
+  private unsubscribeItems?: () => void;
+
   private counter = 0;
 
   private golds: Gold[] = [];
+
+  private items: GameItem[] = [];
 
   private players: Map<string, Player> = new Map();
 
@@ -44,9 +62,11 @@ export default class MultiplayerGame {
 
   private roomCode = '';
 
-  private playersRef?: Reference;
-
   private goldsRef?: Reference;
+
+  private itemsRef?: Reference;
+
+  private playersRef?: Reference;
 
   private onGameOver?: CallBack;
 
@@ -62,6 +82,8 @@ export default class MultiplayerGame {
 
   private onPlayersUpdate?: (players: Player[]) => void;
 
+  private onItemCollected?: (itemId: string, collectedBy: string) => void;
+
   private isFirebaseReady = false;
 
   private timerInterval?: any;
@@ -70,16 +92,19 @@ export default class MultiplayerGame {
 
   private startTime?: number;
 
-  constructor(
-    canvas: CanvasOrNull,
-    onGameOver?: CallBack,
-    callBack?: CallBack,
-    onGoldHit?: (gold: Gold) => void,
-    onGoldCollected?: (goldId: string, collectedBy: string) => void,
-    onTimerUpdate?: (secondsLeft: number) => void,
-    onStatusUpdate?: (status: 'waiting' | 'started') => void,
-    onPlayersUpdate?: (players: Player[]) => void
-  ) {
+  constructor(options: MultiplayerGameOptions) {
+    const {
+      canvas,
+      onGameOver,
+      callBack,
+      onGoldHit,
+      onGoldCollected,
+      onTimerUpdate,
+      onStatusUpdate,
+      onPlayersUpdate,
+      onItemCollected
+    } = options;
+
     this.canvas = canvas;
     this.isWinner = false;
     this.opPositions = new Map();
@@ -90,6 +115,7 @@ export default class MultiplayerGame {
     this.onTimerUpdate = onTimerUpdate;
     this.onStatusUpdate = onStatusUpdate;
     this.onPlayersUpdate = onPlayersUpdate;
+    this.onItemCollected = onItemCollected;
     try {
       this.initFirebaseService();
       this.isFirebaseReady = true;
@@ -185,13 +211,7 @@ export default class MultiplayerGame {
   };
 
   public collectGold = async (gold: Gold): Promise<boolean> => {
-    if (!this.isFirebaseReady || !this.myUID) {
-      const localGold = this.golds.find((g) => g.id === gold.id);
-      if (!localGold || localGold.collectedBy) return false;
-      localGold.collectedBy = 'local-player';
-      if (this.game) this.game.setGoldItems(this.golds);
-      return true;
-    }
+    if (!this.isFirebaseReady || !this.myUID) return false;
 
     const goldRef = this.getGoldsRef().child(gold.id);
     const playerRef = this.getPlayersRef().child(this.myUID);
@@ -228,6 +248,88 @@ export default class MultiplayerGame {
     return false;
   };
 
+  public collectItem = async (item: GameItem): Promise<boolean> => {
+    if (!this.isFirebaseReady || !this.myUID) return false;
+
+    const itemRef = this.getItemsRef().child(item.id);
+    const playerRef = this.getPlayersRef().child(this.myUID);
+
+    try {
+      const result = await itemRef.transaction((currentItemData: any) => {
+        if (currentItemData && currentItemData.collectedBy) {
+          return undefined; // Abort transaction
+        }
+        return {
+          ...item,
+          collectedBy: this.myUID,
+          collectedAt: Date.now()
+        };
+      });
+
+      if (result.committed) {
+        // Add item to player inventory
+        const inventoryField =
+          item.type === ItemType.SMOKE_BOMB ? 'smokeBombs' : 'nets';
+        await playerRef.child('inventory').child(inventoryField).transaction((currentCount: number | null) => {
+          return (currentCount || 0) + 1;
+        });
+
+        const localItem = this.items.find((i) => i.id === item.id);
+        if (localItem) {
+          localItem.collectedBy = this.myUID;
+          if (this.game) this.game.setGameItems(this.items);
+        }
+        return true;
+      }
+    } catch (e) {
+      console.error('Collect item transaction failed:', e);
+    }
+
+    return false;
+  };
+
+  public useItem = async (type: ItemType, targetId: string): Promise<boolean> => {
+    if (!this.isFirebaseReady || !this.myUID) return false;
+
+    const playerRef = this.getPlayersRef().child(this.myUID);
+    const targetRef = this.getPlayersRef().child(targetId);
+    const inventoryField = type === ItemType.SMOKE_BOMB ? 'smokeBombs' : 'nets';
+
+    try {
+      // 1. Check inventory and decrement
+      let hasItem = false;
+      await playerRef.child('inventory').child(inventoryField).transaction((currentCount: number | null) => {
+        if ((currentCount || 0) > 0) {
+          hasItem = true;
+          return (currentCount || 0) - 1;
+        }
+        return undefined;
+      });
+
+      if (!hasItem) return false;
+
+      // 2. Apply debuff to target
+      const now = Date.now();
+      const debuff: Debuff = {
+        type,
+        startTime: now,
+        endTime: now + DEBUFF_DURATION,
+        attackerName: this.playerName || 'Anonymous'
+      };
+
+      await targetRef.child('activeDebuffs').transaction((currentDebuffs: Debuff[] | null) => {
+        const debuffs = currentDebuffs || [];
+        // Add new debuff
+        return [...debuffs, debuff];
+      });
+
+      return true;
+    } catch (e) {
+      console.error('Use item failed:', e);
+      return false;
+    }
+  };
+
   public enterGame = (name: string): void => {
     if (!this.isFirebaseReady) {
       const me = this.game?.getMyPlayer();
@@ -245,8 +347,8 @@ export default class MultiplayerGame {
     if (this.unsubscribePlayers) {
       this.unsubscribePlayers();
     }
-    if (this.unsubscribeGolds) {
-      this.unsubscribeGolds();
+    if (this.unsubscribeItems) {
+      this.unsubscribeItems();
     }
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
@@ -273,6 +375,7 @@ export default class MultiplayerGame {
     const roomRef = this.database.ref(`rooms/${this.roomCode}`);
     this.playersRef = roomRef.child('players');
     this.goldsRef = roomRef.child('golds');
+    this.itemsRef = roomRef.child('items');
     const auth = app.auth();
     this.signInAndInitListener(auth);
   };
@@ -289,6 +392,13 @@ export default class MultiplayerGame {
       throw new Error('Golds reference is not initialized.');
     }
     return this.goldsRef;
+  };
+
+  private getItemsRef = (): Reference => {
+    if (!this.itemsRef) {
+      throw new Error('Items reference is not initialized.');
+    }
+    return this.itemsRef;
   };
 
   private signInAndInitListener = (auth: Auth) => {
@@ -374,6 +484,7 @@ export default class MultiplayerGame {
       }
       this.initNewGame(12345);
       this.addGoldsListener();
+      this.addItemsListener();
     } catch (e) {
       console.error('Sync player failed:', e);
     }
@@ -388,7 +499,7 @@ export default class MultiplayerGame {
     const listener = (snapshot: firebase.database.DataSnapshot) => {
       const goldsData = snapshot.val() || {};
       const goldOwners = new Map<string, string | null>();
-      
+
       Object.keys(goldsData).forEach((id) => {
         goldOwners.set(id, goldsData[id]?.collectedBy || null);
       });
@@ -414,6 +525,41 @@ export default class MultiplayerGame {
     this.unsubscribeGolds = () => this.getGoldsRef().off('value', listener);
   };
 
+  private addItemsListener = (): void => {
+    if (!this.isFirebaseReady) return;
+    if (this.unsubscribeItems) {
+      this.unsubscribeItems();
+    }
+
+    const listener = (snapshot: firebase.database.DataSnapshot) => {
+      const itemsData = snapshot.val() || {};
+      const itemOwners = new Map<string, string | null>();
+
+      Object.keys(itemsData).forEach((id) => {
+        itemOwners.set(id, itemsData[id]?.collectedBy || null);
+      });
+
+      this.items = this.items.map((item) => {
+        const nextCollectedBy = itemOwners.get(item.id) || null;
+        if (!item.collectedBy && nextCollectedBy && this.onItemCollected) {
+          this.onItemCollected(item.id, nextCollectedBy);
+        }
+
+        return {
+          ...item,
+          collectedBy: nextCollectedBy
+        };
+      });
+
+      if (this.game) {
+        this.game.setGameItems(this.items);
+      }
+    };
+
+    this.getItemsRef().on('value', listener);
+    this.unsubscribeItems = () => this.getItemsRef().off('value', listener);
+  };
+
   private addPlayersListener = (): void => {
     if (!this.isFirebaseReady) return;
     
@@ -432,7 +578,9 @@ export default class MultiplayerGame {
           finishTime: p.finishTime,
           reachedGoal: Boolean(p.reachedGoal),
           joinedAt: p.joinedAt,
-          startTime: p.startTime
+          startTime: p.startTime,
+          inventory: p.inventory || { smokeBombs: 0, nets: 0 },
+          activeDebuffs: p.activeDebuffs || []
         };
 
         this.players.set(id, player);
@@ -476,16 +624,29 @@ export default class MultiplayerGame {
   private initNewGame = (seed: number) => {
     const size = MAZE_SIZE;
     this.golds = generateGold(size, seed);
+    this.items = generateItems(size, seed);
 
-    this.game = new Game(this.canvas, size, seed, this.myUID, (gold) => {
-      if (this.onGoldHit && !gold.collectedBy) {
-        this.onGoldHit(gold);
+    this.game = new Game(
+      this.canvas,
+      size,
+      seed,
+      this.myUID,
+      (gold) => {
+        if (this.onGoldHit && !gold.collectedBy) {
+          this.onGoldHit(gold);
+        }
+      },
+      (item) => {
+        if (!item.collectedBy) {
+          this.collectItem(item);
+        }
       }
-    });
+    );
 
     if (this.canvas) {
       this.game.setOpponentsPos(this.opPositions);
       this.game.setGoldItems(this.golds);
+      this.game.setGameItems(this.items);
       this.game.setPlayersMap(this.players);
     }
     this.isWinner = false;

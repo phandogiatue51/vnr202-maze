@@ -8,6 +8,8 @@ interface LeaderboardProps {
   title?: string;
   myUID?: string;
   variant?: 'live' | 'result';
+  onChoosePlayer?: (playerId: string) => void;
+  canChoose?: boolean;
 }
 
 type RankedPlayer = {
@@ -67,7 +69,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   players,
   title = 'Bảng xếp hạng trực tiếp',
   myUID,
-  variant = 'live'
+  variant = 'live',
+  onChoosePlayer,
+  canChoose = false
 }) => {
   const rankedPlayers = useMemo(() => buildRankedPlayers(players, variant), [players, variant]);
 
@@ -91,18 +95,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <th>Người chơi</th>
             <th>Tài liệu</th>
             <th>Trạng thái</th>
+            {variant === 'live' && <th>Hành động</th>}
           </tr>
         </thead>
         <tbody>
           {rankedPlayers.length === 0 ? (
             <tr>
-              <td colSpan={4} className="text-center py-4 text-white-50">
+              <td colSpan={variant === 'live' ? 5 : 4} className="text-center py-4 text-white-50">
                 <i>Đợi người chơi tham gia...</i>
               </td>
             </tr>
           ) : (
             rankedPlayers.map(({ player, rank }, index) => {
               const isMe = player.id === myUID;
+              const canBeTargeted = !isMe && !player.reachedGoal;
+
               return (
                 <tr key={player.id} className={isMe ? 'row-me' : ''}>
                   <td>
@@ -122,6 +129,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       </span>
                     )}
                   </td>
+                  {variant === 'live' && (
+                    <td className="action-cell">
+                      {canBeTargeted && (
+                        <button
+                          className={`btn-choose ${canChoose ? 'active' : 'disabled'}`}
+                          onClick={() => canChoose && onChoosePlayer?.(player.id)}
+                          disabled={!canChoose}
+                        >
+                          Chọn
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })
