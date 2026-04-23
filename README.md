@@ -37,17 +37,21 @@ Detailed rules can be found in the [RULE.MD](./RULE.MD) file.
 
 ## 📸 Screenshots
 
-<img width="800" alt="Homepage" src="https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b" />
-*Homepage - Main menu with game title and start button*
+![Homepage](https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b)
 
-<img width="800" alt="Lobby" src="https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233" />
-*Lobby screen - Create or join a room with a room code*
+*Homepage - Main menu*
 
-<img width="800" alt="Gameplay" src="https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869" />
-*In-game maze with fog of war and collectible items*
+![Lobby](https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233)
 
-<img width="800" alt="Quiz" src="https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c" />
-*Quiz popup - Answer MCQs to collect heritage documents*
+*Lobby - Room creation and joining*
+
+![Gameplay](https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869)
+
+*Gameplay - Maze exploration*
+
+![Quiz](https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c)
+
+*Quiz - Answer questions to collect points*
 
 ---
 © 2023 - 2026 FPT University Students. For educational purposes only.
