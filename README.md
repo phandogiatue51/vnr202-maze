@@ -36,16 +36,20 @@ This project was developed as part of the curriculum at **FPT University, Vietna
 Detailed rules can be found in the [RULE.MD](./RULE.MD) file.
 
 ## 📸 Screenshots
-*Homepage - Main menu*
+**Homepage - Main menu**
+
 ![Homepage](https://github.com/user-attachments/assets/1f8055fd-bb44-43f8-9f90-452716ad0a8b)
 
-*Lobby - Room creation and joining*
+**Lobby - Room creation and joining**
+
 ![Lobby](https://github.com/user-attachments/assets/583af0e8-dbce-4070-a18f-b9d06b059233)
 
-*Gameplay - Maze exploration*
+**Gameplay - Maze exploration**
+
 ![Gameplay](https://github.com/user-attachments/assets/d4a6269e-fe85-4e6f-9f87-63f2ac546869)
 
-*Leaderboard*
+**Leaderboard**
+
 ![Quiz](https://github.com/user-attachments/assets/538cfe05-3e57-43b8-a815-dddee2c1106c)
 
 ---
