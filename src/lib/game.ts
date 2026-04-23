@@ -72,6 +72,10 @@ export default class Game {
     return this.player;
   };
 
+  public setMyPlayerLocation = (location: Cord): void => {
+    this.player.location = this.getBoundedCord(location.r, location.c);
+  };
+
   public getGoldItems = (): Gold[] => {
     return this.goldItems;
   };
@@ -235,6 +239,6 @@ export default class Game {
     }
 
     path.reverse();
-    return path.slice(0, 8);
+    return [this.player.location, ...path.slice(1, 9)];
   };
 }

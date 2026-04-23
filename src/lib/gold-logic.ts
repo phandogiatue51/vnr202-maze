@@ -28,8 +28,9 @@ export function generateGold(size: number, seed: number): Gold[] {
   usedPositions.add('0,0');
   usedPositions.add(`${size - 1},${size - 1}`);
 
-  const goldQuestions = [...questions];
-  // Shuffle questions if needed, but we have 50 questions for 50 gold slots
+  const goldQuestions = [...questions]
+    .sort(() => rng.next() - 0.5)
+    .slice(0, 50);
 
   for (let i = 0; i < 50; i++) {
     let r: number;

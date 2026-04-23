@@ -22,16 +22,16 @@ const callBack: CallBack = (success, msg) => {
 const TARGET_ITEM_LABELS: Record<'boom' | 'flash' | 'net' | 'smoke', string> = {
   boom: 'Boom',
   flash: 'Flash',
-  net: 'Luoi',
+  net: 'Lưới',
   smoke: 'Smoke'
 };
 
 const INVENTORY_LABELS: Record<Exclude<ItemType, 'banana'>, string> = {
-  torch: 'Duoc',
+  torch: 'Đuốc',
   boom: 'Boom',
   flash: 'Flash',
-  net: 'Luoi',
-  shield: 'Khien',
+  net: 'Lưới',
+  shield: 'Khiên',
   smoke: 'Smoke'
 };
 
@@ -97,11 +97,11 @@ function MultiplayerMaze(): JSX.Element {
   const collectedCount = myPlayer?.goldCount || 0;
   const shieldCount = myPlayer?.shieldCount || 0;
   const activeEffects = [
-    isEffectActive(myEffects.torchUntil, effectNow) ? 'Duoc chi duong' : null,
-    isEffectActive(myEffects.reversedUntil, effectNow) ? 'Dao phim' : null,
-    isEffectActive(myEffects.rootedUntil, effectNow) ? 'Bi troi' : null,
-    isEffectActive(myEffects.smokedUntil, effectNow) ? 'Khoi mu' : null,
-    isEffectActive(myEffects.flashedUntil, effectNow) ? 'Flash trang man' : null
+    isEffectActive(myEffects.torchUntil, effectNow) ? 'Đuốc chỉ đường' : null,
+    isEffectActive(myEffects.reversedUntil, effectNow) ? 'Đảo phím' : null,
+    isEffectActive(myEffects.rootedUntil, effectNow) ? 'Bị trói' : null,
+    isEffectActive(myEffects.smokedUntil, effectNow) ? 'Khói mù' : null,
+    isEffectActive(myEffects.flashedUntil, effectNow) ? 'Flash trắng màn' : null
   ].filter(Boolean) as string[];
 
   useEffect(() => {
@@ -145,7 +145,7 @@ function MultiplayerMaze(): JSX.Element {
           setIsFinished(true);
         } else {
           if (localStorage.getItem('playerName')) {
-            toast.error('Tran dau da ket thuc. Hay xem bang xep hang.', TOAST_CONFIG);
+            toast.error('Trận đấu đã kết thúc. Hãy xem bảng xếp hạng.', TOAST_CONFIG);
           }
           setIsGameOver(true);
         }
@@ -164,7 +164,7 @@ function MultiplayerMaze(): JSX.Element {
           setHitGold(null);
 
           if (collectedBy !== currentPlayerId) {
-            toast.info('Tai lieu nay da duoc nguoi choi khac lay truoc do.', TOAST_CONFIG);
+            toast.info('Tài liệu này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
           }
         }
       },
@@ -221,12 +221,15 @@ function MultiplayerMaze(): JSX.Element {
     const nextEffects = myEffects;
 
     const effectEntries: Array<{ key: keyof typeof nextEffects; message: string }> = [
-      { key: 'reversedUntil', message: 'Ban dam phai vo chuoi, phim di chuyen bi dao trong 10 giay.' },
-      { key: 'rootedUntil', message: 'Ban bi luoi chup, khong the di chuyen trong 5 giay.' },
-      { key: 'smokedUntil', message: 'Ban bi smoke, man hinh bi lam mo trong 5 giay.' },
-      { key: 'flashedUntil', message: 'Ban bi flash, man hinh bi choi trang trong 2 giay.' },
-      { key: 'explosionUntil', message: 'Ban bi boom danh trung.' },
-      { key: 'torchUntil', message: 'Duoc dang chi duong toi dich trong 10 giay.' }
+      { key: 'reversedUntil', message: 'Bạn dẫm phải vỏ chuối, phím di chuyển bị đảo trong 10 giây.' },
+      { key: 'rootedUntil', message: 'Bạn bị lưới chụp, không thể di chuyển trong 5 giây.' },
+      { key: 'smokedUntil', message: 'Bạn bị smoke, màn hình bị làm mờ trong 5 giây.' },
+      { key: 'flashedUntil', message: 'Bạn bị flash, màn hình bị chói trắng trong 2 giây.' },
+      { key: 'explosionUntil', message: 'Bạn bị boom đánh trúng.' },
+      {
+        key: 'torchUntil',
+        message: 'Đuốc đang chỉ đường tới đích. Hãy đi theo đường line vàng trong 10 giây.'
+      }
     ];
 
     effectEntries.forEach(({ key, message }) => {
@@ -238,7 +241,7 @@ function MultiplayerMaze(): JSX.Element {
     });
 
     if (previousShieldRef.current > 0 && shieldCount < previousShieldRef.current) {
-      toast.info('Khien cua ban da chan mot hieu ung.', TOAST_CONFIG);
+      toast.info('Khiên của bạn đã chặn một hiệu ứng.', TOAST_CONFIG);
     }
 
     previousEffectsRef.current = { ...nextEffects };
@@ -260,12 +263,12 @@ function MultiplayerMaze(): JSX.Element {
 
   const openTargetModal = (type: 'boom' | 'flash' | 'net' | 'smoke') => {
     if ((myInventory[type] || 0) <= 0) {
-      toast.error(`Ban khong con ${INVENTORY_LABELS[type]}.`, TOAST_CONFIG);
+      toast.error(`Bạn không còn ${INVENTORY_LABELS[type]}.`, TOAST_CONFIG);
       return;
     }
 
     if (targetPlayers.length === 0) {
-      toast.info('Hien khong co nguoi choi khac de chon.', TOAST_CONFIG);
+      toast.info('Hiện không có người chơi khác để chọn.', TOAST_CONFIG);
       return;
     }
 
@@ -316,19 +319,19 @@ function MultiplayerMaze(): JSX.Element {
         <div className="live-leaderboard-wrapper">
           <div className="leaderboard-stats">
             <div className="leaderboard-stat-pill">
-              <span className="leaderboard-stat-label">Thoi gian con lai</span>
+              <span className="leaderboard-stat-label">Thời gian còn lại</span>
               <span className="leaderboard-stat-value">{formatTime(timeLeft)}</span>
             </div>
             <div className="leaderboard-stat-pill">
-              <span className="leaderboard-stat-label">Tai lieu</span>
+              <span className="leaderboard-stat-label">Tài liệu</span>
               <span className="leaderboard-stat-value">{collectedCount}</span>
             </div>
           </div>
 
           <div className="combat-panel">
             <div className="combat-panel-header">
-              <h3>Vat pham va trang thai</h3>
-              <span>Khien: {shieldCount}</span>
+              <h3>Vật phẩm và trạng thái</h3>
+              <span>Khiên: {shieldCount}</span>
             </div>
 
             <div className="inventory-grid">
@@ -354,7 +357,7 @@ function MultiplayerMaze(): JSX.Element {
                     <span className="inventory-card-title">{INVENTORY_LABELS[itemType]}</span>
                     <span className="inventory-card-count">x{count}</span>
                     <span className="inventory-card-hint">
-                      {isInstant ? 'Dung ngay' : 'Chon muc tieu'}
+                      {isInstant ? 'Tự kích hoạt khi nhặt' : 'Chọn mục tiêu'}
                     </span>
                   </button>
                 );
@@ -369,17 +372,10 @@ function MultiplayerMaze(): JSX.Element {
                   </span>
                 ))
               ) : (
-                <span className="effect-chip muted">Khong co hieu ung dang chay</span>
+                <span className="effect-chip muted">Không có hiệu ứng đang chạy</span>
               )}
             </div>
           </div>
-
-          <Leaderboard
-            players={allPlayers}
-            title="Bang xep hang truc tiep"
-            myUID={myPlayerId}
-            variant="live"
-          />
         </div>
       </div>
 
@@ -394,12 +390,12 @@ function MultiplayerMaze(): JSX.Element {
             if (correct) {
               const collected = await gameRef.current?.collectGold(hitGold);
               if (collected) {
-                toast.success('Chinh xac! Ban da thu thap duoc tai lieu.', TOAST_CONFIG);
+                toast.success('Chính xác! Bạn đã thu thập được tài liệu.', TOAST_CONFIG);
               } else {
-                toast.info('Tai lieu nay da duoc nguoi choi khac lay truoc do.', TOAST_CONFIG);
+                toast.info('Tài liệu này đã được người chơi khác lấy trước đó.', TOAST_CONFIG);
               }
             } else {
-              toast.error('Sai cau tra loi. Hay thu lai sau.', TOAST_CONFIG);
+              toast.error('Sai câu trả lời. Hãy thử lại sau.', TOAST_CONFIG);
             }
 
             hitGoldRef.current = null;
@@ -413,8 +409,8 @@ function MultiplayerMaze(): JSX.Element {
           <div className="player-target-modal">
             <div className="player-target-modal-header">
               <div>
-                <h3>Chon nguoi choi</h3>
-                <p>Dung {TARGET_ITEM_LABELS[selectedAction]} len nguoi choi khac.</p>
+                <h3>Chọn người chơi</h3>
+                <p>Dùng {TARGET_ITEM_LABELS[selectedAction]} lên người chơi khác.</p>
               </div>
               <button
                 type="button"
@@ -424,7 +420,7 @@ function MultiplayerMaze(): JSX.Element {
                   setSelectedAction(null);
                 }}
               >
-                Dong
+                Đóng
               </button>
             </div>
 
@@ -436,8 +432,8 @@ function MultiplayerMaze(): JSX.Element {
                   className="player-target-row"
                   onClick={() => handleUseOnTarget(player.id)}
                 >
-                  <span>{player.name || `Nguoi choi ${player.id.substring(0, 4)}`}</span>
-                  <span>Tai lieu: {player.goldCount || 0}</span>
+                  <span>{player.name || `Người chơi ${player.id.substring(0, 4)}`}</span>
+                  <span>Tài liệu: {player.goldCount || 0}</span>
                 </button>
               ))}
             </div>
@@ -450,7 +446,7 @@ function MultiplayerMaze(): JSX.Element {
           <div className="game-over-panel">
             <Leaderboard
               players={allPlayers}
-              title="Ket qua tran dau"
+              title="Kết quả trận đấu"
               myUID={myPlayerId}
               variant="result"
             />
@@ -465,7 +461,7 @@ function MultiplayerMaze(): JSX.Element {
                   window.location.href = '#/';
                 }}
               >
-                Thoat ra menu
+                Thoát ra menu
               </button>
             </div>
           </div>

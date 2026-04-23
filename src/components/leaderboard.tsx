@@ -23,22 +23,18 @@ const comparePlayers = (a: Player, b: Player): number => {
   const reachedA = Boolean(a.reachedGoal);
   const reachedB = Boolean(b.reachedGoal);
 
-  // 1. Finished players first
   if (reachedA !== reachedB) return reachedA ? -1 : 1;
 
-  // 2. Both same status (either both finished or both unfinished), sort by goldCount (score)
   const goldA = a.goldCount || 0;
   const goldB = b.goldCount || 0;
   if (goldB !== goldA) return goldB - goldA;
 
-  // 3. If both finished and same goldCount, sort by finishTime (less is better)
   if (reachedA && reachedB) {
     const timeA = a.finishTime || Number.MAX_SAFE_INTEGER;
     const timeB = b.finishTime || Number.MAX_SAFE_INTEGER;
     if (timeA !== timeB) return timeA - timeB;
   }
 
-  // 4. Fallback to name
   return getDisplayName(a).localeCompare(getDisplayName(b), 'vi', { sensitivity: 'base' });
 };
 
@@ -101,14 +97,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               </td>
             </tr>
           ) : (
-            rankedPlayers.map(({ player, rank }, index) => {
+            rankedPlayers.map(({ player, rank }) => {
               const isMe = player.id === myUID;
               return (
                 <tr key={player.id} className={isMe ? 'row-me' : ''}>
                   <td>
                     <span className={`rank-badge rank-${Math.min(rank, 3)}`}>{rank}</span>
                   </td>
-
                   <td className="player-id-cell">{getDisplayName(player)}</td>
                   <td className="gold-cell">
                     <span className="gold-text">{player.goldCount || 0}</span>

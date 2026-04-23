@@ -6,6 +6,9 @@ import 'firebase/auth';
 import { FIREBASE_CONFIG } from '../constants';
 import { Player } from '../type';
 import { createDefaultEffects, createDefaultInventory } from '../lib/item-logic';
+import { generateGold } from '../lib/gold-logic';
+import { generateMapItems } from '../lib/item-logic';
+import { MAZE_SEED, MAZE_SIZE } from '../constants';
 import './home-page.css';
 
 type LobbyStatus = 'waiting' | 'started';
@@ -15,6 +18,13 @@ type LobbyDoc = {
   status: LobbyStatus;
   startedAt?: number | null;
   updatedAt?: number;
+};
+
+const toKeyedObject = <T extends { id: string }>(items: T[]): Record<string, T> => {
+  return items.reduce<Record<string, T>>((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {});
 };
 
 const getApp = (): firebase.app.App => {
@@ -90,22 +100,34 @@ const LobbyPage: React.FC = () => {
         await ensureLobbyExists();
         
         const playerRef = playersRef.child(currentUID);
-        await playerRef.set({
+        const existingPlayerSnap = await playerRef.once('value');
+        const existingPlayer = existingPlayerSnap.val() || {};
+        await playerRef.update({
           name: playerName,
-          r: 0.5,
-          c: 0.5,
-          goldCount: 0,
-          shieldCount: 0,
-          inventory: createDefaultInventory(),
-          effects: createDefaultEffects(),
-          finishTime: null,
-          reachedGoal: false,
-          joinedAt: Date.now(),
-          startTime: null
+          r: existingPlayer.r ?? 0.5,
+          c: existingPlayer.c ?? 0.5,
+          goldCount: existingPlayer.goldCount ?? 0,
+          shieldCount: existingPlayer.shieldCount ?? 0,
+          inventory: {
+            ...createDefaultInventory(),
+            ...(existingPlayer.inventory || {})
+          },
+          effects: {
+            ...createDefaultEffects(),
+            ...(existingPlayer.effects || {})
+          },
+          finishTime: existingPlayer.finishTime ?? null,
+          reachedGoal: Boolean(existingPlayer.reachedGoal),
+          joinedAt: existingPlayer.joinedAt ?? Date.now(),
+          startTime: existingPlayer.startTime ?? null,
+          connected: true,
+          lastSeen: null
         });
 
-        // Set onDisconnect to remove player
-        playerRef.onDisconnect().remove();
+        playerRef.onDisconnect().update({
+          connected: false,
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        });
 
         await tryClaimHost(currentUID);
 
@@ -115,6 +137,7 @@ const LobbyPage: React.FC = () => {
           
           Object.keys(playersData).forEach((id) => {
             const p = playersData[id];
+            if (p.connected === false) return;
             nextPlayers.push({
               id: id,
               name: p.name,
@@ -126,7 +149,9 @@ const LobbyPage: React.FC = () => {
               finishTime: p.finishTime,
               reachedGoal: Boolean(p.reachedGoal),
               joinedAt: p.joinedAt,
-              startTime: p.startTime
+              startTime: p.startTime,
+              connected: p.connected !== false,
+              lastSeen: p.lastSeen
             });
           });
           
@@ -201,9 +226,13 @@ const LobbyPage: React.FC = () => {
 
     const snapshot = await playersRef.once('value');
     const playersData = snapshot.val() || {};
+    const activePlayers = Object.keys(playersData).filter((id) => playersData[id]?.connected !== false);
+    const golds = toKeyedObject(generateGold(MAZE_SIZE, MAZE_SEED));
+    const items = toKeyedObject(generateMapItems(MAZE_SIZE, MAZE_SEED));
     
     const updates: any = {};
-    Object.keys(playersData).forEach((id) => {
+    activePlayers.forEach((id) => {
+      const playerData = playersData[id] || {};
       updates[`players/${id}/startTime`] = now;
       updates[`players/${id}/finishTime`] = null;
       updates[`players/${id}/reachedGoal`] = false;
@@ -213,10 +242,13 @@ const LobbyPage: React.FC = () => {
       updates[`players/${id}/effects`] = createDefaultEffects();
       updates[`players/${id}/r`] = 0.5;
       updates[`players/${id}/c`] = 0.5;
+      updates[`players/${id}/connected`] = true;
+      updates[`players/${id}/lastSeen`] = null;
+      updates[`players/${id}/name`] = playerData.name || playerName;
     });
 
-    updates['golds'] = null;
-    updates['items'] = null;
+    updates['golds'] = golds;
+    updates['items'] = items;
     updates['hostId'] = myUID;
     updates['status'] = 'started';
     updates['startedAt'] = now;

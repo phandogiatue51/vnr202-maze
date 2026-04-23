@@ -44,6 +44,13 @@ type UseItemResult = {
   message: string;
 };
 
+type RoomDoc = {
+  startedAt?: number | null;
+  status?: 'waiting' | 'started';
+  golds?: Record<string, Gold>;
+  items?: Record<string, MapItem>;
+};
+
 export default class MultiplayerGame {
   private isWinner: boolean;
 
@@ -106,6 +113,8 @@ export default class MultiplayerGame {
   private secondsLeft = ROUND_DURATION_SECONDS;
 
   private startTime?: number;
+
+  private roomRef?: Reference;
 
   constructor(
     canvas: CanvasOrNull,
@@ -383,6 +392,7 @@ export default class MultiplayerGame {
     }
 
     const roomRef = this.database.ref(`rooms/${this.roomCode}`);
+    this.roomRef = roomRef;
     this.playersRef = roomRef.child('players');
     this.goldsRef = roomRef.child('golds');
     this.itemsRef = roomRef.child('items');
@@ -439,55 +449,74 @@ export default class MultiplayerGame {
 
     const playerRef = this.getPlayersRef().child(this.myUID);
     const myPlayer = this.game?.getMyPlayer();
-    const location = myPlayer?.location || { r: 0.5, c: 0.5 };
+    const fallbackLocation = myPlayer?.location || { r: 0.5, c: 0.5 };
+    let resolvedLocation: Cord = fallbackLocation;
 
     try {
       const snapshot = await playerRef.once('value');
+      const roomSnapshot = await this.roomRef?.once('value');
+      const roomData = (roomSnapshot?.val() || {}) as RoomDoc;
       const now = Date.now();
+      const sharedStartTime = roomData.startedAt || null;
 
       if (!snapshot.exists()) {
-        this.startTime = now;
+        this.startTime = sharedStartTime || now;
+        resolvedLocation = fallbackLocation;
         await playerRef.set({
           name,
-          ...location,
+          ...resolvedLocation,
           goldCount: 0,
           shieldCount: 0,
           inventory: createDefaultInventory(),
           effects: createDefaultEffects(),
           reachedGoal: false,
           joinedAt: now,
-          startTime: now,
-          finishTime: null
+          startTime: this.startTime,
+          finishTime: null,
+          connected: true,
+          lastSeen: null
         });
 
-        playerRef.onDisconnect().remove();
-        this.startLocalTimer(now + ROUND_DURATION_SECONDS * 1000);
+        playerRef.onDisconnect().update({
+          connected: false,
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        });
+        this.startLocalTimer((this.startTime || now) + ROUND_DURATION_SECONDS * 1000);
       } else {
         const data = snapshot.val();
-        const previousStartTime = data?.startTime;
+        const previousStartTime = data?.startTime || sharedStartTime;
         const isPreviousGameFinished = data?.finishTime !== null && data?.finishTime !== undefined;
         const isTimeExpired =
           typeof previousStartTime === 'number' &&
           now - previousStartTime >= ROUND_DURATION_SECONDS * 1000;
 
         if (isPreviousGameFinished || isTimeExpired || !previousStartTime) {
-          this.startTime = now;
+          this.startTime = sharedStartTime || now;
+          resolvedLocation = { r: 0.5, c: 0.5 };
           await playerRef.update({
             name,
-            ...location,
-            startTime: now,
+            r: resolvedLocation.r,
+            c: resolvedLocation.c,
+            startTime: this.startTime,
             finishTime: null,
             reachedGoal: false,
             goldCount: 0,
             shieldCount: 0,
             inventory: createDefaultInventory(),
-            effects: createDefaultEffects()
+            effects: createDefaultEffects(),
+            connected: true,
+            lastSeen: null
           });
         } else {
           this.startTime = previousStartTime;
+          resolvedLocation = {
+            r: data?.r ?? fallbackLocation.r,
+            c: data?.c ?? fallbackLocation.c
+          };
           await playerRef.update({
             name,
-            ...location,
+            r: resolvedLocation.r,
+            c: resolvedLocation.c,
             inventory: {
               ...createDefaultInventory(),
               ...(data?.inventory || {})
@@ -496,14 +525,24 @@ export default class MultiplayerGame {
               ...createDefaultEffects(),
               ...(data?.effects || {})
             },
-            shieldCount: data?.shieldCount || 0
+            shieldCount: data?.shieldCount || 0,
+            goldCount: data?.goldCount || 0,
+            finishTime: data?.finishTime ?? null,
+            reachedGoal: Boolean(data?.reachedGoal),
+            startTime: previousStartTime,
+            connected: true,
+            lastSeen: null
           });
         }
 
-        playerRef.onDisconnect().remove();
+        playerRef.onDisconnect().update({
+          connected: false,
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        });
         this.startLocalTimer((this.startTime || now) + ROUND_DURATION_SECONDS * 1000);
       }
       this.initNewGame(12345);
+      this.game?.setMyPlayerLocation(resolvedLocation);
       this.addGoldsListener();
       this.addItemsListener();
     } catch (e) {
@@ -519,23 +558,16 @@ export default class MultiplayerGame {
 
     const listener = (snapshot: firebase.database.DataSnapshot) => {
       const goldsData = snapshot.val() || {};
-      const goldOwners = new Map<string, string | null>();
-
-      Object.keys(goldsData).forEach((id) => {
-        goldOwners.set(id, goldsData[id]?.collectedBy || null);
-      });
-
-      this.golds = this.golds.map((gold) => {
-        const nextCollectedBy = goldOwners.get(gold.id) || null;
-        if (!gold.collectedBy && nextCollectedBy && this.onGoldCollected) {
-          this.onGoldCollected(gold.id, nextCollectedBy);
-        }
-
-        return {
-          ...gold,
-          collectedBy: nextCollectedBy
-        };
-      });
+      const remoteGolds = Object.values(goldsData) as Gold[];
+      if (remoteGolds.length > 0) {
+        remoteGolds.forEach((gold) => {
+          const previousGold = this.golds.find((item) => item.id === gold.id);
+          if (!previousGold?.collectedBy && gold.collectedBy && this.onGoldCollected) {
+            this.onGoldCollected(gold.id, gold.collectedBy);
+          }
+        });
+        this.golds = remoteGolds;
+      }
 
       if (this.game) {
         this.game.setGoldItems(this.golds);
@@ -554,14 +586,10 @@ export default class MultiplayerGame {
 
     const listener = (snapshot: firebase.database.DataSnapshot) => {
       const itemsData = snapshot.val() || {};
-      this.items = this.items.map((item) => {
-        const remoteItem = itemsData[item.id] || {};
-        return {
-          ...item,
-          collectedBy: remoteItem.collectedBy || null,
-          consumedBy: remoteItem.consumedBy || null
-        };
-      });
+      const remoteItems = Object.values(itemsData) as MapItem[];
+      if (remoteItems.length > 0) {
+        this.items = remoteItems;
+      }
 
       if (this.game) {
         this.game.setMapItems(this.items);
@@ -582,6 +610,9 @@ export default class MultiplayerGame {
       const playersData = snapshot.val() || {};
       Object.keys(playersData).forEach((id) => {
         const p = playersData[id];
+        if (p.connected === false) {
+          return;
+        }
         const player: Player = {
           id,
           location: { r: p.r || 0, c: p.c || 0 },
@@ -599,7 +630,9 @@ export default class MultiplayerGame {
           finishTime: p.finishTime,
           reachedGoal: Boolean(p.reachedGoal),
           joinedAt: p.joinedAt,
-          startTime: p.startTime
+          startTime: p.startTime,
+          connected: p.connected !== false,
+          lastSeen: p.lastSeen
         };
 
         this.players.set(id, player);
@@ -740,6 +773,36 @@ export default class MultiplayerGame {
     });
 
     if (!result.committed) return;
+
+    if (item.type === 'torch') {
+      await this.getPlayersRef()
+        .child(this.myUID)
+        .child('effects')
+        .update({ torchUntil: Date.now() + EFFECT_DURATION.torch });
+      if (this.callBack) {
+        this.callBack(true, 'Đã nhặt đuốc. Hãy đi theo đường line vàng trong 10 giây.');
+      }
+      return;
+    }
+
+    if (item.type === 'shield') {
+      await this.getPlayersRef().child(this.myUID).transaction((playerData: any) => {
+        if (!playerData) return playerData;
+        return {
+          ...playerData,
+          shieldCount: (playerData.shieldCount || 0) + 1,
+          effects: {
+            ...createDefaultEffects(),
+            ...(playerData.effects || {}),
+            shieldPulseUntil: Date.now() + EFFECT_DURATION.shieldPulse
+          }
+        };
+      });
+      if (this.callBack) {
+        this.callBack(true, 'Đã nhặt khiên. Khiên được kích hoạt ngay và sẽ chặn 1 hiệu ứng kế tiếp.');
+      }
+      return;
+    }
 
     await this.getPlayersRef()
       .child(this.myUID)
