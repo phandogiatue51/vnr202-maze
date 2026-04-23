@@ -13,6 +13,20 @@ import MultiplayerGame from '../lib/multiplayer-game';
 import { CallBack, Gold, ItemType, Player } from '../type';
 import { isEffectActive } from '../lib/item-logic';
 import explosionImageUrl from '../assets/vu-no.png';
+import boomImageUrl from '../assets/boom.png';
+import flashImageUrl from '../assets/flash.jpg';
+import torchImageUrl from '../assets/duoc.jpg';
+import shieldImageUrl from '../assets/khien.jpg';
+import netImageUrl from '../assets/luoi.png';
+import smokeImageUrl from '../assets/smoke.png';
+import bananaUrl from '../assets/banana-01.png';
+
+type EffectPopup = {
+  id: string;
+  title: string;
+  message: string;
+  image: string;
+};
 
 const callBack: CallBack = (success, msg) => {
   if (success) toast.success(msg, TOAST_CONFIG);
@@ -66,6 +80,7 @@ function MultiplayerMaze(): JSX.Element {
   const hitGoldRef = useRef<Gold | null>(null);
   const previousEffectsRef = useRef<Record<string, number | null | undefined>>({});
   const previousShieldRef = useRef<number>(0);
+  const shownEffectPopupRef = useRef<Record<string, number | string | null | undefined>>({});
 
   const [canvasSize, setCanvasSize] = useState(getResponsiveCanvasSize);
   const [hitGold, setHitGold] = useState<Gold | null>(null);
@@ -78,6 +93,8 @@ function MultiplayerMaze(): JSX.Element {
   const [selectedAction, setSelectedAction] = useState<'boom' | 'flash' | 'net' | 'smoke' | null>(
     null
   );
+  const [effectPopupQueue, setEffectPopupQueue] = useState<EffectPopup[]>([]);
+  const [activeEffectPopup, setActiveEffectPopup] = useState<EffectPopup | null>(null);
 
   const onKey = getOnKey(keyDirs, control);
   const offKey = getOffKey(keyDirs, control);
@@ -88,7 +105,7 @@ function MultiplayerMaze(): JSX.Element {
     [allPlayers, myPlayerId]
   );
   const targetPlayers = useMemo(
-    () => allPlayers.filter((player) => player.id !== myPlayerId),
+    () => allPlayers.filter((player) => player.id !== myPlayerId && !player.reachedGoal),
     [allPlayers, myPlayerId]
   );
 
@@ -103,6 +120,36 @@ function MultiplayerMaze(): JSX.Element {
     isEffectActive(myEffects.smokedUntil, effectNow) ? 'Khói mù' : null,
     isEffectActive(myEffects.flashedUntil, effectNow) ? 'Flash trắng màn' : null
   ].filter(Boolean) as string[];
+
+  const queueEffectPopup = useCallback((popup: Omit<EffectPopup, 'id'>) => {
+    setEffectPopupQueue((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        ...popup
+      }
+    ]);
+  }, []);
+
+  useEffect(() => {
+    if (activeEffectPopup || effectPopupQueue.length === 0) return undefined;
+
+    // Delay 150ms trước khi show popup tiếp theo
+    // → mắt kịp nhận ra popup cũ đã mất trước khi popup mới xuất hiện
+    const showDelay = window.setTimeout(() => {
+      const [nextPopup, ...rest] = effectPopupQueue;
+      setActiveEffectPopup(nextPopup);
+      setEffectPopupQueue(rest);
+
+      const hideTimeout = window.setTimeout(() => {
+        setActiveEffectPopup((current) => (current?.id === nextPopup.id ? null : current));
+      }, 1000);
+
+      return () => window.clearTimeout(hideTimeout);
+    }, 150);
+
+    return () => window.clearTimeout(showDelay);
+  }, [activeEffectPopup, effectPopupQueue]);
 
   useEffect(() => {
     const playerName = localStorage.getItem('playerName');
@@ -217,36 +264,88 @@ function MultiplayerMaze(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const previousEffects = previousEffectsRef.current;
+    if (!myPlayerId || !myPlayer) {
+      return;
+    }
+
     const nextEffects = myEffects;
 
-    const effectEntries: Array<{ key: keyof typeof nextEffects; message: string }> = [
-      { key: 'reversedUntil', message: 'Bạn dẫm phải vỏ chuối, phím di chuyển bị đảo trong 10 giây.' },
-      { key: 'rootedUntil', message: 'Bạn bị lưới chụp, không thể di chuyển trong 5 giây.' },
-      { key: 'smokedUntil', message: 'Bạn bị smoke, màn hình bị làm mờ trong 5 giây.' },
-      { key: 'flashedUntil', message: 'Bạn bị flash, màn hình bị chói trắng trong 2 giây.' },
-      { key: 'explosionUntil', message: 'Bạn bị boom đánh trúng.' },
-      {
-        key: 'torchUntil',
-        message: 'Đuốc đang chỉ đường tới đích. Hãy đi theo đường line vàng trong 10 giây.'
-      }
-    ];
+    const effectEntries: Array<{
+      key: keyof typeof nextEffects;
+      title: string;
+      message: string;
+      image: string;
+    }> = [
+        {
+          key: 'reversedUntil',
+          title: 'Dẫm Phải Vỏ Chuối',
+          message: 'Phím di chuyển của bạn bị đảo trong 10 giây.',
+          image: bananaUrl
+        },
+        {
+          key: 'rootedUntil',
+          title: 'Bị Lưới Chụp',
+          message: 'Bạn không thể di chuyển trong 5 giây.',
+          image: netImageUrl
+        },
+        {
+          key: 'smokedUntil',
+          title: 'Bị Smoke',
+          message: 'Tầm nhìn của bạn bị làm mờ trong 5 giây.',
+          image: smokeImageUrl
+        },
+        {
+          key: 'flashedUntil',
+          title: 'Bị Flash',
+          message: 'Màn hình của bạn bị chói trắng trong 2 giây.',
+          image: flashImageUrl
+        },
+        {
+          key: 'explosionUntil',
+          title: 'Bị Ném Boom',
+          message: 'Bạn vừa bị đối thủ ném boom trúng.',
+          image: boomImageUrl
+        },
+        {
+          key: 'torchUntil',
+          title: 'Đuốc Đang Chỉ Đường',
+          message: 'Hãy đi theo đường line vàng trong 10 giây để tới đích.',
+          image: torchImageUrl
+        }
+      ];
 
-    effectEntries.forEach(({ key, message }) => {
-      const prev = previousEffects[key];
+    effectEntries.forEach(({ key, title, message, image }) => {
       const next = nextEffects[key];
-      if ((!prev || prev <= effectNow) && typeof next === 'number' && next > effectNow) {
-        toast.info(message, TOAST_CONFIG);
+      const shownValue = shownEffectPopupRef.current[key];
+
+      if (typeof next === 'number' && next > effectNow && shownValue !== next) {
+        queueEffectPopup({ title, message, image });
+        shownEffectPopupRef.current[key] = next;
+        return;
+      }
+
+      if (!next || next <= effectNow) {
+        shownEffectPopupRef.current[key] = null;
       }
     });
 
-    if (previousShieldRef.current > 0 && shieldCount < previousShieldRef.current) {
-      toast.info('Khiên của bạn đã chặn một hiệu ứng.', TOAST_CONFIG);
+    const shieldPopupKey = `shield-block-${previousShieldRef.current}->${shieldCount}`;
+    if (
+      previousShieldRef.current > 0 &&
+      shieldCount < previousShieldRef.current &&
+      shownEffectPopupRef.current.shieldBlocked !== shieldPopupKey
+    ) {
+      queueEffectPopup({
+        title: 'Khiên Đã Chặn Đòn',
+        message: 'Khiên của bạn đã chặn một hiệu ứng từ đối thủ.',
+        image: shieldImageUrl
+      });
+      shownEffectPopupRef.current.shieldBlocked = shieldPopupKey;
     }
 
     previousEffectsRef.current = { ...nextEffects };
     previousShieldRef.current = shieldCount;
-  }, [effectNow, myEffects, shieldCount]);
+  }, [effectNow, myEffects, myPlayer, myPlayerId, queueEffectPopup, shieldCount]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -268,7 +367,7 @@ function MultiplayerMaze(): JSX.Element {
     }
 
     if (targetPlayers.length === 0) {
-      toast.info('Hiện không có người chơi khác để chọn.', TOAST_CONFIG);
+      toast.info('Hiện không có người chơi nào chưa về đích để chọn.', TOAST_CONFIG);
       return;
     }
 
@@ -379,6 +478,16 @@ function MultiplayerMaze(): JSX.Element {
         </div>
       </div>
 
+      {activeEffectPopup && (
+        <div className="effect-notice-layer" aria-live="polite">
+          <div className="effect-notice-card">
+            <img src={activeEffectPopup.image} alt={activeEffectPopup.title} className="effect-notice-image" />
+            <h3>{activeEffectPopup.title}</h3>
+            <p>{activeEffectPopup.message}</p>
+          </div>
+        </div>
+      )}
+
       {hitGold && (
         <QuestionModal
           gold={hitGold}
@@ -410,7 +519,7 @@ function MultiplayerMaze(): JSX.Element {
             <div className="player-target-modal-header">
               <div>
                 <h3>Chọn người chơi</h3>
-                <p>Dùng {TARGET_ITEM_LABELS[selectedAction]} lên người chơi khác.</p>
+                <p>Dùng {TARGET_ITEM_LABELS[selectedAction]} lên người chơi chưa về đích.</p>
               </div>
               <button
                 type="button"

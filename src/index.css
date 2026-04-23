@@ -256,6 +256,57 @@ body {
   filter: drop-shadow(0 20px 30px rgba(249, 115, 22, 0.45));
 }
 
+.effect-notice-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.effect-notice-card {
+  width: min(100%, 420px);
+  padding: 1.4rem 1.4rem 1.2rem;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.98));
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  box-shadow:
+    0 28px 80px rgba(15, 23, 42, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-align: center;
+  animation: effectNoticePop 0.26s ease-out;
+}
+
+.effect-notice-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 22px;
+  margin: 0 auto 0.9rem;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+.effect-notice-card h3,
+.effect-notice-card p {
+  margin: 0;
+}
+
+.effect-notice-card h3 {
+  color: #f8fafc;
+  font-size: 1.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.effect-notice-card p {
+  color: rgba(226, 232, 240, 0.86);
+  line-height: 1.55;
+  font-size: 0.98rem;
+}
+
 .player-target-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -468,5 +519,17 @@ body {
   100% {
     transform: scale(1.18) rotate(0deg);
     opacity: 0;
+  }
+}
+
+@keyframes effectNoticePop {
+  from {
+    transform: translateY(16px) scale(0.92);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
   }
 }
