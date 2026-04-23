@@ -1,20 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;900&family=Outfit:wght@400;500;700;900&family=Inter:wght@400;500;700&display=swap');
+
 @tailwind base;
 @import 'react-toastify/dist/ReactToastify.css';
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-    url('./assets/bg-01.jpg') center / cover no-repeat fixed,
-    radial-gradient(circle at top, rgba(251, 191, 36, 0.08), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 25%),
-    #0f172a;
-  color: white;
+  background: #f8fafc;
+  color: #0f172a;
   margin: 0;
-  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  font-family: 'Be Vietnam Pro', 'Outfit', 'Inter', -apple-system, sans-serif;
   overflow-x: hidden;
-  font-family: 'Arial', sans-serif;
 }
 
 .maze-container-wrapper {
@@ -40,7 +36,7 @@ body {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   pointer-events: none;
   z-index: -1;
 }
@@ -58,7 +54,7 @@ body {
   padding: 0.875rem;
   cursor: default;
 }
-
+  
 .maze-stage-inner {
   position: relative;
   width: min(100%, calc(100vh - 5.75rem));
@@ -83,13 +79,13 @@ body {
 
 .live-leaderboard-wrapper {
   width: 100%;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.92) 0%, rgba(17, 24, 39, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 245, 249, 0.98) 100%);
   border-radius: 28px;
-  border: 1px solid rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.2);
   padding: 1.35rem;
   min-height: calc(100vh - 4rem);
   overflow-y: auto;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1);
 }
 
 .leaderboard-stats {
@@ -105,14 +101,14 @@ body {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.2rem;
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(251, 191, 36, 0.34);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 22px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 .leaderboard-stat-label {
-  color: rgba(255, 255, 255, 0.64);
+  color: rgba(15, 23, 42, 0.6);
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -130,7 +126,7 @@ body {
   margin-bottom: 1.5rem;
   padding: 1rem;
   border-radius: 24px;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
@@ -145,11 +141,11 @@ body {
 .combat-panel-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: #f8fafc;
+  color: #0f172a;
 }
 
 .combat-panel-header span {
-  color: #93c5fd;
+  color: #2563eb;
   font-weight: 700;
 }
 
@@ -166,9 +162,9 @@ body {
   align-items: flex-start;
   padding: 0.95rem;
   border-radius: 18px;
-  border: 1px solid rgba(251, 191, 36, 0.18);
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.92));
-  color: #f8fafc;
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
+  color: #0f172a;
   transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
@@ -193,7 +189,7 @@ body {
 }
 
 .inventory-card-hint {
-  color: rgba(226, 232, 240, 0.66);
+  color: rgba(15, 23, 42, 0.6);
   font-size: 0.82rem;
 }
 
@@ -270,11 +266,11 @@ body {
   width: min(100%, 420px);
   padding: 1.4rem 1.4rem 1.2rem;
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.98));
-  border: 1px solid rgba(251, 191, 36, 0.34);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  border: 1px solid rgba(251, 191, 36, 0.4);
   box-shadow:
-    0 28px 80px rgba(15, 23, 42, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 28px 80px rgba(15, 23, 42, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   text-align: center;
   animation: effectNoticePop 0.26s ease-out;
 }
@@ -296,13 +292,13 @@ body {
 }
 
 .effect-notice-card h3 {
-  color: #f8fafc;
+  color: #0f172a;
   font-size: 1.35rem;
   margin-bottom: 0.45rem;
 }
 
 .effect-notice-card p {
-  color: rgba(226, 232, 240, 0.86);
+  color: rgba(15, 23, 42, 0.7);
   line-height: 1.55;
   font-size: 0.98rem;
 }
@@ -310,7 +306,7 @@ body {
 .player-target-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,10 +318,10 @@ body {
 .player-target-modal {
   width: min(100%, 560px);
   border-radius: 26px;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  border: 1px solid rgba(251, 191, 36, 0.3);
   padding: 1.25rem;
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.16);
 }
 
 .player-target-modal-header {
@@ -343,15 +339,15 @@ body {
 
 .player-target-modal-header p {
   margin-top: 0.35rem;
-  color: rgba(226, 232, 240, 0.72);
+  color: rgba(15, 23, 42, 0.6);
 }
 
 .player-target-close {
   padding: 0.6rem 0.9rem;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.24);
-  background: rgba(15, 23, 42, 0.9);
-  color: white;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .player-target-list {
@@ -369,8 +365,8 @@ body {
   padding: 0.95rem 1rem;
   border-radius: 18px;
   border: 1px solid rgba(96, 165, 250, 0.16);
-  background: rgba(15, 23, 42, 0.74);
-  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
   text-align: left;
 }
 
@@ -433,7 +429,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.82);
+  background: rgba(15, 23, 42, 0.4);
   z-index: 1001;
   display: flex;
   justify-content: center;
@@ -447,11 +443,11 @@ body {
   width: min(100%, 960px);
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
-  border: 1px solid rgba(251, 191, 36, 0.16);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.25);
   border-radius: 28px;
   padding: 2rem;
-  box-shadow: 0 32px 70px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 32px 70px rgba(0, 0, 0, 0.15);
 }
 
 .game-over-actions {

@@ -47,25 +47,26 @@ const NameEntryPage: React.FC = () => {
   };
 
   return (
-    <Container className="home-container">
-      <div
-        className="p-5"
-        style={{
-          background: '#1e293b',
-          borderRadius: '20px',
-          border: '2px solid #fbbf24',
-          maxWidth: '500px',
-          width: '100%'
-        }}
-      >
+    <div className="home-container">
+      <div className="home-bg-overlay" />
+      <div className="name-entry-card">
         {mode === null && (
-          <>
-            <h2 className="mb-4 text-center">Tên của bạn là gì?</h2>
-            <Form onSubmit={handleNameSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Control
+          <div className="fade-in">
+            <h2 className="mb-4 text-center" style={{ fontWeight: 800, color: '#0f172a' }}>Tên của bạn là gì?</h2>
+            <form onSubmit={handleNameSubmit}>
+              <div className="mb-4">
+                <input
                   className="name-input-field"
-                  style={{ fontSize: '1.5rem', textAlign: 'center' }}
+                  style={{ 
+                    fontSize: '1.5rem', 
+                    textAlign: 'center', 
+                    width: '100%',
+                    padding: '1rem',
+                    borderRadius: '16px',
+                    border: '2px solid #f1f5f9',
+                    background: '#f8fafc',
+                    color: '#0f172a'
+                  }}
                   type="text"
                   placeholder="Nhập tên của bạn..."
                   value={playerName}
@@ -73,8 +74,8 @@ const NameEntryPage: React.FC = () => {
                   autoFocus
                   required
                 />
-              </Form.Group>
-              <div className="d-grid gap-3">
+              </div>
+              <div className="d-grid gap-3" style={{ display: 'grid', gap: '1rem' }}>
                 <button type="submit" className="menu-btn btn-play" disabled={!playerName.trim()}>
                   Tiếp tục
                 </button>
@@ -86,65 +87,65 @@ const NameEntryPage: React.FC = () => {
                   Hủy
                 </button>
               </div>
-            </Form>
-          </>
+            </form>
+          </div>
         )}
 
         {mode === 'mode' && (
-          <>
-            <h2 className="mb-4 text-center">Chọn chức năng</h2>
-            <p className="text-white-50 text-center mb-4">Bạn muốn làm gì?</p>
-            <div className="d-flex flex-row gap-3">
-              <div className="mb-4">
-                <button
-                  type="button"
-                  className="menu-btn btn-play"
-                  onClick={handleCreateRoom}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Đang tạo...' : 'Tạo phòng mới'}
-                </button>
-              </div>
-              <div className="mb-4">
-                <button
-                  type="button"
-                  className="menu-btn btn-rule"
-                  onClick={() => setMode('join')}
-                  disabled={isLoading}
-                >
-                  Tham gia phòng có sẵn
-                </button>
-              </div>
-              <div className="mb-4">
-                <button
-                  type="button"
-                  className="menu-btn btn-rule"
-                  onClick={() => setMode(null)}
-                  disabled={isLoading}
-                >
-                  Quay lại
-                </button>
-              </div>
+          <div className="fade-in">
+            <h2 className="mb-4 text-center" style={{ fontWeight: 800, color: '#0f172a' }}>Chọn chức năng</h2>
+            <p className="text-center mb-4" style={{ color: '#64748b' }}>Bạn muốn làm gì?</p>
+            <div className="d-grid gap-3" style={{ display: 'grid', gap: '1rem' }}>
+              <button
+                type="button"
+                className="menu-btn btn-play"
+                onClick={handleCreateRoom}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Đang tạo...' : 'Tạo phòng mới'}
+              </button>
+              <button
+                type="button"
+                className="menu-btn btn-rule"
+                onClick={() => setMode('join')}
+                disabled={isLoading}
+              >
+                Tham gia phòng có sẵn
+              </button>
+              <button
+                type="button"
+                className="menu-btn btn-rule"
+                onClick={() => setMode(null)}
+                disabled={isLoading}
+              >
+                Quay lại
+              </button>
             </div>
-          </>
+          </div>
         )}
 
         {mode === 'join' && (
-          <>
-            <h2 className="mb-4 text-center">Nhập mã phòng</h2>
-            <Form
+          <div className="fade-in">
+            <h2 className="mb-4 text-center" style={{ fontWeight: 800, color: '#0f172a' }}>Nhập mã phòng</h2>
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleJoinRoom();
               }}
             >
-              <Form.Group className="mb-3">
-                <Form.Control
+              <div className="mb-4">
+                <input
                   className="name-input-field"
                   style={{
                     fontSize: '1.5rem',
                     textAlign: 'center',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    width: '100%',
+                    padding: '1rem',
+                    borderRadius: '16px',
+                    border: '2px solid #f1f5f9',
+                    background: '#f8fafc',
+                    color: '#0f172a'
                   }}
                   type="text"
                   placeholder="VD: ABC123"
@@ -154,8 +155,8 @@ const NameEntryPage: React.FC = () => {
                   maxLength={ROOM_CODE_LEN}
                   required
                 />
-              </Form.Group>
-              <div className="d-grid gap-3">
+              </div>
+              <div className="d-grid gap-3" style={{ display: 'grid', gap: '1rem' }}>
                 <button
                   type="submit"
                   className="menu-btn btn-play"
@@ -172,11 +173,11 @@ const NameEntryPage: React.FC = () => {
                   Quay lại
                 </button>
               </div>
-            </Form>
-          </>
+            </form>
+          </div>
         )}
       </div>
-    </Container>
+    </div>
   );
 };
 

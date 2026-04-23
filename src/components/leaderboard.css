@@ -3,7 +3,7 @@
   border: 0;
   border-radius: 0;
   padding: 0;
-  color: white;
+  color: #1e293b;
   box-shadow: none;
   max-width: 800px;
   width: 100%;
@@ -11,14 +11,14 @@
 }
 
 .leaderboard-title {
-  color: #fbbf24;
+  color: #f59e0b;
   font-size: 1.9rem;
   font-weight: bold;
   margin-bottom: 1.1rem;
   text-transform: uppercase;
   letter-spacing: 0.04rem;
   text-align: center;
-  border-bottom: 1px solid rgba(251, 191, 36, 0.16);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
   padding-bottom: 0.9rem;
 }
 
@@ -33,7 +33,7 @@
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06rem;
-  color: rgba(226, 232, 240, 0.56);
+  color: #64748b;
   padding: 0 12px;
 }
 
@@ -53,8 +53,10 @@
 .leaderboard-table td {
   padding: 16px 12px;
   font-size: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  color: #0f172a;
   text-align: center;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .rank-badge {
@@ -66,8 +68,8 @@
   justify-content: center;
   font-weight: 800;
   font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: #f1f5f9;
+  color: #64748b;
   margin: 0 auto;
 }
 
@@ -89,8 +91,8 @@
 
 .player-id-cell {
   font-weight: 500;
-  color: #f8fafc;
-  font-family: 'Arial', sans-serif;
+  color: #0f172a;
+  font-family: 'Be Vietnam Pro', 'Outfit', sans-serif;
 }
 
 .row-me .player-id-cell {
@@ -122,7 +124,7 @@
 }
 
 .status-racing {
-  color: rgba(255, 255, 255, 0.4);
+  color: #94a3b8;
   font-style: italic;
 }
 

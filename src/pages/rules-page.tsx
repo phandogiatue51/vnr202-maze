@@ -116,6 +116,7 @@ const RulesPage: React.FC = () => {
 
   return (
     <div className="home-container rules-page-shell">
+      <div className="home-bg-overlay" />
       <div className="rules-page-layout">
         <section className="rules-hero-panel">
           <span className="lobby-eyebrow">Hướng dẫn chơi</span>
@@ -175,7 +176,7 @@ const RulesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="rules-tips-panel">
+          <div className="rules-tips-panel" style={{ marginTop: '1.5rem' }}>
             <h3 className="rules-tips-title">Mẹo chơi nhanh</h3>
             <ul className="rules-points compact">
               {QUICK_TIPS.map((tip) => (

@@ -471,7 +471,7 @@ function MultiplayerMaze(): JSX.Element {
                   </span>
                 ))
               ) : (
-                <span className="effect-chip muted">Không có hiệu ứng đang chạy</span>
+                <span className="effect-chip bg-slate-100">Không có hiệu ứng đang chạy</span>
               )}
             </div>
           </div>

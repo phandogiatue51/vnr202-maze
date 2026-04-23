@@ -328,6 +328,7 @@ const LobbyPage: React.FC = () => {
 
   return (
     <div className="home-container lobby-shell">
+      <div className="home-bg-overlay" />
       <div className="lobby-card">
         <div className="lobby-hero">
           <div className="lobby-hero-copy">

@@ -7,18 +7,21 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="home-container">
-      <div className="title-section">
-        <h1 className="game-title">ĐI TÌM LỐI THOÁT</h1>
-        <p className="game-subtitle">Hành Trình Di Sản</p>
-      </div>
+      <div className="home-bg-overlay" />
+      <div className="home-content-card">
+        <div className="title-section">
+          <h1 className="game-title">ĐI TÌM LỐI THOÁT</h1>
+          <p className="game-subtitle">Hành Trình Di Sản</p>
+        </div>
 
-      <div className="home-menu">
-        <button type="button" className="menu-btn btn-play" onClick={() => history.push('/start')}>
-          Bắt đầu
-        </button>
-        <button type="button" className="menu-btn btn-rule" onClick={() => history.push('/rules')}>
-          Luật lệ
-        </button>
+        <div className="home-menu">
+          <button type="button" className="menu-btn btn-play" onClick={() => history.push('/start')}>
+            Bắt đầu
+          </button>
+          <button type="button" className="menu-btn btn-rule" onClick={() => history.push('/rules')}>
+            Luật chơi
+          </button>
+        </div>
       </div>
     </div>
   );
