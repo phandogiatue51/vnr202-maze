@@ -46,10 +46,18 @@ Players take on the role of researchers/soldiers navigating a complex maze to co
     - Status: "Racing" or "Finished."
     - Real-time ranking based on scores.
 
-## 8. Visibility (Fog of War)
-- You can only see the area immediately surrounding your character (limited visibility).
-- You cannot see documents, other players, or the exit if they are far away.
-- Exploration and memory are key to finding your way!
+## 8. Items & Power-ups
+You can find and use special items throughout the maze:
+
+| Item | Effect |
+|------|--------|
+| 🔦 Torch | Shows path to exit for 10 seconds |
+| 🛡️ Shield | Blocks 1 negative effect |
+| 💣 Bomb | Makes target opponent lose 1 document |
+| 🕸️ Net | Immobilizes target for 5 seconds |
+| ✨ Flash | Blinds target for 2 seconds |
+| 💨 Smoke | Obscures target's vision for 5 seconds |
+| 🍌 Banana | Trap - reverses controls for 10 seconds |
 
 ---
 *This project is for educational purposes only (FPT University, Vietnam - Term 2023-2026).*
