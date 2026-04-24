@@ -393,9 +393,6 @@ const LobbyPage: React.FC = () => {
 
                   <div className="lobby-player-text">
                     <span className="lobby-player-name">{p.name}</span>
-                    <span className="lobby-player-role">
-                      {isPlayerHost ? 'Chủ phòng' : 'Sẵn sàng tham gia'}
-                    </span>
                   </div>
 
                   <div className="lobby-player-chip-bottom">
