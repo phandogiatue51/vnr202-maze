@@ -399,7 +399,6 @@ const LobbyPage: React.FC = () => {
                     <span className="lobby-player-index">#{index + 1}</span>
                     <div className="lobby-player-badges">
                       {isMe && <span className="lobby-player-badge">Bạn</span>}
-                      {isPlayerHost && <span className="lobby-host-tag">Host</span>}
                       <span className="lobby-player-status-dot" />
                     </div>
                   </div>
