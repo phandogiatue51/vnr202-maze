@@ -336,6 +336,7 @@ const LobbyPage: React.FC = () => {
             <h2 className="lobby-title">Sảnh chờ</h2>
             <p className="lobby-status-message">{getStatusMsg()}</p>
           </div>
+
           <div className="lobby-room-pill">
             <span className="lobby-room-pill-label">Mã phòng</span>
             <strong className="lobby-room-pill-value">{roomCode || '------'}</strong>
@@ -347,10 +348,12 @@ const LobbyPage: React.FC = () => {
             <span className="lobby-meta-label">Trạng thái</span>
             <strong className="lobby-meta-value">{getLobbyStatusLabel()}</strong>
           </div>
+
           <div className="lobby-meta-card">
             <span className="lobby-meta-label">Người chơi</span>
             <strong className="lobby-meta-value">{players.length}</strong>
           </div>
+          
           <div className="lobby-meta-card">
             <span className="lobby-meta-label">Vai trò</span>
             <strong className="lobby-meta-value">{canManageLobby ? 'Chủ phòng' : 'Thành viên'}</strong>
